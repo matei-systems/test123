@@ -49,15 +49,21 @@ export async function issueCard(formData: FormData) {
     .single();
 
   if (cErr || !cust) {
-    revalidatePath(`/dashboard/programs/${programId}`);
-    return;
+    redirect(
+      `/dashboard/programs/${programId}?error=` +
+        encodeURIComponent(cErr?.message ?? "Kunde konnte nicht angelegt werden.")
+    );
   }
 
-  await supabase.from("cards").insert({
+  const { error: cardErr } = await supabase.from("cards").insert({
     org_id: orgId,
     program_id: programId,
     customer_id: cust.id,
   });
+
+  if (cardErr) {
+    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(cardErr.message));
+  }
 
   revalidatePath(`/dashboard/programs/${programId}`);
 }
@@ -68,17 +74,25 @@ export async function addStamp(formData: FormData) {
   const programId = String(formData.get("programId"));
   const supabase = createClient();
 
-  const { data: card } = await supabase
+  const { data: card, error: fetchErr } = await supabase
     .from("cards")
     .select("stamps, org_id, loyalty_programs(stamps_required)")
     .eq("id", cardId)
     .single();
-  if (!card) return;
+  if (fetchErr || !card) {
+    redirect(
+      `/dashboard/programs/${programId}?error=` +
+        encodeURIComponent(fetchErr?.message ?? "Karte nicht gefunden.")
+    );
+  }
 
   const req = (card as any).loyalty_programs?.stamps_required ?? 10;
   const next = Math.min((card as any).stamps + 1, req);
 
-  await supabase.from("cards").update({ stamps: next }).eq("id", cardId);
+  const { error: updErr } = await supabase.from("cards").update({ stamps: next }).eq("id", cardId);
+  if (updErr) {
+    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(updErr.message));
+  }
   await supabase.from("transactions").insert({
     org_id: (card as any).org_id,
     card_id: cardId,
@@ -94,14 +108,25 @@ export async function addPoints(formData: FormData) {
   const programId = String(formData.get("programId"));
   const supabase = createClient();
 
-  const { data: card } = await supabase
+  const { data: card, error: fetchErr } = await supabase
     .from("cards")
     .select("points, org_id")
     .eq("id", cardId)
     .single();
-  if (!card) return;
+  if (fetchErr || !card) {
+    redirect(
+      `/dashboard/programs/${programId}?error=` +
+        encodeURIComponent(fetchErr?.message ?? "Karte nicht gefunden.")
+    );
+  }
 
-  await supabase.from("cards").update({ points: (card as any).points + 10 }).eq("id", cardId);
+  const { error: updErr } = await supabase
+    .from("cards")
+    .update({ points: (card as any).points + 10 })
+    .eq("id", cardId);
+  if (updErr) {
+    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(updErr.message));
+  }
   await supabase.from("transactions").insert({
     org_id: (card as any).org_id,
     card_id: cardId,
@@ -117,25 +142,38 @@ export async function redeem(formData: FormData) {
   const programId = String(formData.get("programId"));
   const supabase = createClient();
 
-  const { data: card } = await supabase
+  const { data: card, error: fetchErr } = await supabase
     .from("cards")
     .select("stamps, points, org_id, program_id, loyalty_programs(type, stamps_required, points_per_reward)")
     .eq("id", cardId)
     .single();
-  if (!card) return;
+  if (fetchErr || !card) {
+    redirect(
+      `/dashboard/programs/${programId}?error=` +
+        encodeURIComponent(fetchErr?.message ?? "Karte nicht gefunden.")
+    );
+  }
 
   const p = (card as any).loyalty_programs;
   const isStamp = p?.type === "stamp";
   const ready = isStamp
     ? (card as any).stamps >= p.stamps_required
     : (card as any).points >= p.points_per_reward;
-  if (!ready) return;
+  if (!ready) {
+    redirect(
+      `/dashboard/programs/${programId}?error=` +
+        encodeURIComponent("Belohnung ist noch nicht freigeschaltet.")
+    );
+  }
 
   const update = isStamp
     ? { stamps: 0 }
     : { points: (card as any).points - p.points_per_reward };
 
-  await supabase.from("cards").update(update).eq("id", cardId);
+  const { error: updErr } = await supabase.from("cards").update(update).eq("id", cardId);
+  if (updErr) {
+    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(updErr.message));
+  }
   await supabase.from("reward_redemptions").insert({
     org_id: (card as any).org_id,
     card_id: cardId,

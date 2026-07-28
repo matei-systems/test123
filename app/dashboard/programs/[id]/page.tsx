@@ -7,7 +7,13 @@ import { themeGradient } from "@/lib/themes";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProgramDetail({ params }: { params: { id: string } }) {
+export default async function ProgramDetail({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { error?: string };
+}) {
   const { org } = await getCurrentOrg();
   if (!org) redirect("/dashboard/onboarding");
 
@@ -32,6 +38,13 @@ export default async function ProgramDetail({ params }: { params: { id: string }
       <Link href="/dashboard/programs" className="text-sm text-neutral-400 hover:text-white">
         ← Programme
       </Link>
+
+      {searchParams?.error && (
+        <div className="mt-3 text-sm rounded-lg px-3 py-2"
+             style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+          {searchParams.error}
+        </div>
+      )}
 
       <div className="flex items-center gap-3 mt-3 mb-6">
         <div className="w-11 h-11 rounded-xl grid place-items-center font-extrabold text-white"

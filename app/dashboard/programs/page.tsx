@@ -7,7 +7,11 @@ import { THEMES, themeGradient } from "@/lib/themes";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProgramsPage() {
+export default async function ProgramsPage({
+  searchParams,
+}: {
+  searchParams: { error?: string };
+}) {
   const { org } = await getCurrentOrg();
   if (!org) redirect("/dashboard/onboarding");
 
@@ -22,6 +26,13 @@ export default async function ProgramsPage() {
     <div>
       <h1 className="text-2xl font-bold tracking-tight mb-1">Programme</h1>
       <p className="text-neutral-400 text-sm mb-6">Deine digitalen Treuekarten</p>
+
+      {searchParams?.error && (
+        <div className="mb-6 text-sm rounded-lg px-3 py-2"
+             style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+          {searchParams.error}
+        </div>
+      )}
 
       {/* Neues Programm */}
       <form action={createProgram} className="card p-6 mb-8 space-y-4">
