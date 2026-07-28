@@ -89,6 +89,7 @@ create table if not exists loyalty_programs (
   id                 uuid primary key default gen_random_uuid(),
   org_id             uuid not null references organizations(id) on delete cascade,
   name               text not null,
+  title              text,                                 -- Anzeigename auf der Karte
   type               program_type not null default 'stamp',
   stamps_required    int not null default 10,            -- für type='stamp'
   points_per_reward  int not null default 100,           -- für type='points'
@@ -97,6 +98,15 @@ create table if not exists loyalty_programs (
   active             boolean not null default true,
   created_at         timestamptz not null default now()
 );
+
+-- `create table if not exists` above is a no-op against a database that already
+-- has this table from an earlier version of this schema. This app was shipped
+-- with app/dashboard/programs/actions.ts writing a `title` field that never
+-- existed as a column here, which made every "Programm speichern" fail with
+-- `column "title" of relation "loyalty_programs" does not exist` — silently,
+-- because the UI didn't surface DB errors either (fixed separately). Re-running
+-- this whole file against an existing database retroactively adds it.
+alter table loyalty_programs add column if not exists title text;
 
 -- ---------------------------------------------------------------------------
 -- 6) customers — die Endkunden des Unternehmens (nicht die SaaS-User!)
