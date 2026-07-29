@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { themeGradient } from "@/lib/themes";
+import { resolveDesign, cardBackground, cardTextColor } from "@/lib/card-design";
 import JoinForm from "@/components/join/JoinForm";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +16,7 @@ export default async function JoinProgramPage({ params }: { params: { programId:
   if (!program || !program.active) notFound();
 
   const p = program as any;
+  const design = resolveDesign(p.design);
   const title = p.title ?? p.organizations?.name ?? "Treuekarte";
   const goal = p.type === "stamp" ? `${p.stamps_required} Stempel` : `${p.points_per_reward} Punkte`;
 
@@ -28,14 +29,14 @@ export default async function JoinProgramPage({ params }: { params: { programId:
       <div className="w-full max-w-sm relative">
         <div className="flex items-center gap-3 mb-6 justify-center">
           <div
-            className="w-14 h-14 rounded-2xl grid place-items-center font-extrabold text-white text-lg shrink-0 overflow-hidden"
-            style={{ background: themeGradient(p.design?.theme ?? 0) }}
+            className="w-14 h-14 rounded-2xl grid place-items-center font-extrabold text-lg shrink-0 overflow-hidden"
+            style={{ ...cardBackground(design).style, color: cardTextColor(design) }}
           >
-            {p.design?.logoImage ? (
+            {design.logoImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.design.logoImage} alt="" className="w-full h-full object-cover" />
+              <img src={design.logoImage} alt="" className="w-full h-full object-cover" />
             ) : (
-              p.design?.logo ?? "C"
+              design.logo
             )}
           </div>
         </div>

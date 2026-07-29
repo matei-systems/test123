@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import QRCode from "qrcode";
 import WalletCard from "@/components/WalletCard";
-import LogoUpload from "@/components/programs/LogoUpload";
-import { THEMES, themeGradient } from "@/lib/themes";
+import ImageUpload from "@/components/programs/ImageUpload";
+import { THEMES } from "@/lib/themes";
+import { DEFAULT_DESIGN, STAMP_ICONS, type CardDesign, type BackgroundMode, type CornerRadius } from "@/lib/card-design";
 import { createProgram, updateProgram, type ProgramInput } from "@/app/dashboard/programs/actions";
 
 const STEPS = ["Grundlagen", "Design", "Belohnung", "Überprüfen"];
@@ -22,6 +23,72 @@ function Field({
     </div>
   );
 }
+
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (hex: string) => void }) {
+  const valid = /^#[0-9a-fA-F]{6}$/.test(value);
+  return (
+    <div>
+      <label className="label">{label}</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={valid ? value : "#000000"}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-10 h-10 rounded-lg border border-line bg-transparent cursor-pointer shrink-0"
+          aria-label={label}
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="input font-mono text-sm"
+          maxLength={7}
+          placeholder="#3B2A20"
+        />
+      </div>
+    </div>
+  );
+}
+
+function Slider({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  onChange,
+  format,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onChange: (v: number) => void;
+  format?: (v: number) => string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="label mb-0">{label}</label>
+        <span className="text-xs text-faint">{format ? format(value) : value}</span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full"
+        style={{ accentColor: "#E8B573" }}
+      />
+    </div>
+  );
+}
+
+const BG_MODE_LABEL: Record<BackgroundMode, string> = { gradient: "Verlauf", color: "Farbe", image: "Bild" };
+const RADIUS_LABEL: Record<CornerRadius, string> = { lg: "Dezent", xl: "Mittel", "2xl": "Rund" };
 
 export default function ProgramWizard({
   mode,
@@ -45,14 +112,16 @@ export default function ProgramWizard({
       stampsRequired: 10,
       pointsPerReward: 100,
       rewardDescription: "",
-      theme: 0,
-      logo: "C",
-      logoImage: null,
+      design: DEFAULT_DESIGN,
     }
   );
 
   function set<K extends keyof ProgramInput>(key: K, value: ProgramInput[K]) {
     setInput((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function setDesign<K extends keyof CardDesign>(key: K, value: CardDesign[K]) {
+    setInput((prev) => ({ ...prev, design: { ...prev.design, [key]: value } }));
   }
 
   useEffect(() => {
@@ -107,9 +176,12 @@ export default function ProgramWizard({
     });
   }
 
+  const d = input.design;
+  const hasLogo = Boolean(d.logoImage);
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <div className="card p-6 md:p-8">
+      <div className="card p-6 md:p-8 min-w-0">
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-8 overflow-x-auto">
           {STEPS.map((label, i) => (
@@ -146,7 +218,7 @@ export default function ProgramWizard({
             </div>
             <div>
               <label className="label">Typ</label>
-              <div className="inline-flex bg-ink border border-line rounded-xl p-1 gap-1">
+              <div className="inline-flex flex-wrap bg-ink border border-line rounded-xl p-1 gap-1">
                 {(["stamp", "points"] as const).map((t) => (
                   <button
                     key={t}
@@ -184,34 +256,170 @@ export default function ProgramWizard({
 
         {/* Step 1: Design */}
         {step === 1 && (
-          <div className="space-y-6 enter">
+          <div className="space-y-7 enter">
             <div>
-              <label className="label">Kartenfarbe</label>
-              <div className="flex gap-3 flex-wrap">
-                {THEMES.map((t, i) => (
+              <label className="label">Hintergrund</label>
+              <div className="inline-flex flex-wrap bg-ink border border-line rounded-xl p-1 gap-1 mb-4">
+                {(["gradient", "color", "image"] as BackgroundMode[]).map((m) => (
                   <button
-                    key={i}
+                    key={m}
                     type="button"
-                    onClick={() => set("theme", i)}
-                    className={`w-10 h-10 rounded-lg transition-transform hover:scale-105 ${
-                      input.theme === i ? "ring-2 ring-gold ring-offset-2 ring-offset-[#16131A]" : ""
+                    onClick={() => setDesign("backgroundMode", m)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      d.backgroundMode === m ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
                     }`}
-                    style={{ background: themeGradient(i) }}
-                    title={t.name}
-                    aria-label={t.name}
+                  >
+                    {BG_MODE_LABEL[m]}
+                  </button>
+                ))}
+              </div>
+
+              {d.backgroundMode === "gradient" && (
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-xs text-faint mb-2">Schnellauswahl</div>
+                    <div className="flex gap-3 flex-wrap">
+                      {THEMES.map((t, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            setDesign("gradientFrom", t.from);
+                            setDesign("gradientTo", t.to);
+                          }}
+                          className={`w-10 h-10 rounded-lg transition-transform hover:scale-105 ${
+                            d.gradientFrom === t.from && d.gradientTo === t.to ? "ring-2 ring-gold ring-offset-2 ring-offset-[#16131A]" : ""
+                          }`}
+                          style={{ background: `linear-gradient(140deg, ${t.from}, ${t.to})` }}
+                          title={t.name}
+                          aria-label={t.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <ColorField label="Farbe von" value={d.gradientFrom} onChange={(v) => setDesign("gradientFrom", v)} />
+                    <ColorField label="Farbe bis" value={d.gradientTo} onChange={(v) => setDesign("gradientTo", v)} />
+                  </div>
+                </div>
+              )}
+
+              {d.backgroundMode === "color" && <ColorField label="Kartenfarbe" value={d.solidColor} onChange={(v) => setDesign("solidColor", v)} />}
+
+              {d.backgroundMode === "image" && (
+                <div className="space-y-4">
+                  <ImageUpload
+                    kind="background"
+                    aspect="wide"
+                    value={d.backgroundImage}
+                    onChange={(url, luminance) => {
+                      setDesign("backgroundImage", url);
+                      if (luminance !== undefined) setDesign("bgLuminance", luminance);
+                    }}
                   />
+                  {d.backgroundImage && (
+                    <Slider
+                      label="Bildausschnitt"
+                      value={d.backgroundPositionY}
+                      min={0}
+                      max={100}
+                      onChange={(v) => setDesign("backgroundPositionY", v)}
+                    />
+                  )}
+                  <div className="text-xs text-faint">
+                    Für gute Lesbarkeit wird automatisch ein dezenter Verlauf über das Bild gelegt.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="label">Textfarbe</label>
+              <div className="inline-flex flex-wrap bg-ink border border-line rounded-xl p-1 gap-1 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setDesign("textColor", "auto")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    d.textColor === "auto" ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+                  }`}
+                >
+                  Automatisch
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDesign("textColor", d.textColor === "auto" ? "#FFFFFF" : d.textColor)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    d.textColor !== "auto" ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+                  }`}
+                >
+                  Manuell
+                </button>
+              </div>
+              {d.textColor !== "auto" && (
+                <ColorField label="Textfarbe" value={d.textColor} onChange={(v) => setDesign("textColor", v)} />
+              )}
+            </div>
+
+            <div>
+              <label className="label">Kartenform</label>
+              <div className="inline-flex flex-wrap bg-ink border border-line rounded-xl p-1 gap-1">
+                {(["lg", "xl", "2xl"] as CornerRadius[]).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setDesign("cornerRadius", r)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      d.cornerRadius === r ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+                    }`}
+                  >
+                    {RADIUS_LABEL[r]}
+                  </button>
                 ))}
               </div>
             </div>
-            <Field
-              label="Logo-Buchstabe (Fallback ohne Upload)"
-              maxLength={2}
-              value={input.logo}
-              onChange={(e) => set("logo", e.target.value.toUpperCase())}
-            />
-            <div>
-              <label className="label">Logo hochladen</label>
-              <LogoUpload value={input.logoImage} onChange={(v) => set("logoImage", v)} />
+
+            {input.type === "stamp" && (
+              <div>
+                <label className="label">Stempel-Symbol</label>
+                <div className="flex gap-2 flex-wrap">
+                  {STAMP_ICONS.map((icon) => (
+                    <button
+                      key={icon}
+                      type="button"
+                      onClick={() => setDesign("stampIcon", icon)}
+                      className={`w-10 h-10 rounded-lg grid place-items-center text-lg border transition-colors ${
+                        d.stampIcon === icon ? "border-gold bg-[rgba(232,181,115,0.12)]" : "border-line text-faint hover:text-[#F4F1EC]"
+                      }`}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-white/[0.06]">
+              <Field
+                label="Logo-Buchstabe (Fallback ohne Bild)"
+                maxLength={2}
+                value={d.logo}
+                onChange={(e) => setDesign("logo", e.target.value.toUpperCase())}
+              />
+              <div className="mt-4">
+                <label className="label">Logo hochladen</label>
+                <ImageUpload
+                  kind="logo"
+                  value={d.logoImage}
+                  onChange={(url) => setDesign("logoImage", url)}
+                />
+              </div>
+              {hasLogo && (
+                <div className="grid gap-4 md:grid-cols-3 mt-4">
+                  <Slider label="Größe" value={d.logoScale} min={0.6} max={1.6} step={0.05} onChange={(v) => setDesign("logoScale", v)} format={(v) => `${Math.round(v * 100)}%`} />
+                  <Slider label="Horizontal" value={d.logoOffsetX} min={-15} max={15} onChange={(v) => setDesign("logoOffsetX", v)} />
+                  <Slider label="Vertikal" value={d.logoOffsetY} min={-15} max={15} onChange={(v) => setDesign("logoOffsetY", v)} />
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -273,9 +481,7 @@ export default function ProgramWizard({
         <div className="flex justify-center">
           <WalletCard
             title={input.title || "Dein Betrieb"}
-            logo={input.logo || "C"}
-            logoImage={input.logoImage}
-            theme={input.theme}
+            design={d}
             type={input.type}
             stamps={previewStamps}
             stampsRequired={input.stampsRequired}

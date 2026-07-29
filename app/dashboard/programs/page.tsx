@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentOrg } from "@/lib/org";
 import { hasMinRole } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
-import { themeGradient } from "@/lib/themes";
+import { resolveDesign, cardBackground, cardTextColor } from "@/lib/card-design";
 
 export const dynamic = "force-dynamic";
 
@@ -34,19 +34,21 @@ export default async function ProgramsPage() {
       </div>
 
       <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))" }}>
-        {(programs ?? []).map((p: any, i: number) => (
+        {(programs ?? []).map((p: any, i: number) => {
+          const d = resolveDesign(p.design);
+          return (
           <div key={p.id} className="card card-hover p-4 enter relative group" style={{ animationDelay: `${i * 50}ms` }}>
             <Link href={`/dashboard/programs/${p.id}`} className="block">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-10 h-10 rounded-lg grid place-items-center font-extrabold text-white shrink-0 overflow-hidden"
-                  style={{ background: themeGradient(p.design?.theme ?? 0) }}
+                  className="w-10 h-10 rounded-lg grid place-items-center font-extrabold shrink-0 overflow-hidden"
+                  style={{ ...cardBackground(d).style, color: cardTextColor(d) }}
                 >
-                  {p.design?.logoImage ? (
+                  {d.logoImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.design.logoImage} alt="" className="w-full h-full object-cover" />
+                    <img src={d.logoImage} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    p.design?.logo ?? "C"
+                    d.logo
                   )}
                 </div>
                 <div className="min-w-0">
@@ -71,7 +73,8 @@ export default async function ProgramsPage() {
               </Link>
             )}
           </div>
-        ))}
+          );
+        })}
         {(!programs || programs.length === 0) && (
           <div className="text-[#6E685F] text-sm">Noch keine Programme. Leg dein erstes an.</div>
         )}

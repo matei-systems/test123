@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentOrg } from "@/lib/org";
 import { hasMinRole } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
+import { resolveDesign } from "@/lib/card-design";
 import ProgramWizard from "@/components/programs/ProgramWizard";
 import type { ProgramInput } from "@/app/dashboard/programs/actions";
 
@@ -29,9 +30,7 @@ export default async function EditProgramPage({ params }: { params: { id: string
     stampsRequired: program.stamps_required,
     pointsPerReward: program.points_per_reward,
     rewardDescription: program.reward_description ?? "",
-    theme: program.design?.theme ?? 0,
-    logo: program.design?.logo ?? "C",
-    logoImage: program.design?.logoImage ?? null,
+    design: resolveDesign(program.design),
   };
 
   return (

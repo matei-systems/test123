@@ -46,7 +46,23 @@ body {
 }
 .enter { animation: fadeSlideUp .5s cubic-bezier(.2,.8,.2,1) both; }
 
+/* Kundenkarte (WalletCard): Stempel-Pop beim frischen Stempel, sanftes
+   Glühen sobald eine Belohnung freigeschaltet ist. */
+@keyframes stampPop {
+  0%   { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+  55%  { transform: scale(1.18) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes rewardGlow {
+  0%, 100% { box-shadow: 0 0 0 rgba(255,255,255,0); }
+  50%      { box-shadow: 0 0 22px rgba(255,255,255,0.35); }
+}
+.stamp-pop { animation: stampPop .5s cubic-bezier(.2,.8,.3,1.3) both; }
+.reward-ready-glow { animation: rewardGlow 2.2s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .enter { animation: none; }
   .card-hover:hover { transform: none; }
+  .stamp-pop { animation: none; }
+  .reward-ready-glow { animation: none; }
 }

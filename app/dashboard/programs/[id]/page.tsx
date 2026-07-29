@@ -5,7 +5,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { hasMinRole } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { issueCard, addStamp, addPoints, redeem } from "../actions";
-import { themeGradient } from "@/lib/themes";
+import { resolveDesign, cardBackground, cardTextColor } from "@/lib/card-design";
 import DeleteProgramButton from "@/components/programs/DeleteProgramButton";
 import SubmitButton from "@/components/SubmitButton";
 
@@ -38,6 +38,7 @@ export default async function ProgramDetail({
     .order("created_at", { ascending: false });
 
   const isStamp = program.type === "stamp";
+  const design = resolveDesign(program.design);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const joinUrl = `${appUrl}/j/${program.id}`;
   const joinQr = await QRCode.toDataURL(joinUrl, { margin: 1, width: 140, color: { dark: "#111111", light: "#ffffff" } });
@@ -58,14 +59,14 @@ export default async function ProgramDetail({
       <div className="flex items-start justify-between gap-4 mt-3 mb-6 enter flex-wrap">
         <div className="flex items-center gap-3">
           <div
-            className="w-11 h-11 rounded-xl grid place-items-center font-extrabold text-white shrink-0 overflow-hidden"
-            style={{ background: themeGradient(program.design?.theme ?? 0) }}
+            className="w-11 h-11 rounded-xl grid place-items-center font-extrabold shrink-0 overflow-hidden"
+            style={{ ...cardBackground(design).style, color: cardTextColor(design) }}
           >
-            {program.design?.logoImage ? (
+            {design.logoImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={program.design.logoImage} alt="" className="w-full h-full object-cover" />
+              <img src={design.logoImage} alt="" className="w-full h-full object-cover" />
             ) : (
-              program.design?.logo ?? "C"
+              design.logo
             )}
           </div>
           <div>

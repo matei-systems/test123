@@ -493,3 +493,16 @@ drop policy if exists redeem_select on reward_redemptions;
 create policy redeem_select on reward_redemptions for select using (is_org_member(org_id));
 drop policy if exists redeem_insert on reward_redemptions;
 create policy redeem_insert on reward_redemptions for insert with check (is_org_member(org_id));
+
+-- ============================================================================
+--  P8: Kartendesign & Branding
+--  - card-assets: öffentlicher Storage-Bucket für Hintergrundbilder/Logos.
+--    Uploads laufen ausschließlich über eine Server Action mit dem
+--    Service-Role-Client (RLS-Bypass, wie an jeder anderen Stelle der App,
+--    an der ein privilegierter Schreibzugriff nötig ist) - daher genügt hier
+--    eine öffentliche Leseberechtigung, keine zusätzlichen Schreib-Policies.
+--    Pfadschema: card-assets/<org_id>/<uuid>.<ext>
+-- ============================================================================
+insert into storage.buckets (id, name, public)
+values ('card-assets', 'card-assets', true)
+on conflict (id) do nothing;

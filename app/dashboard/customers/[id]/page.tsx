@@ -110,9 +110,7 @@ export default async function CustomerProfile({ params }: { params: { id: string
               <div key={c.id} className="enter" style={{ animationDelay: `${i * 60}ms` }}>
                 <WalletCard
                   title={p?.title ?? p?.name ?? "Treuekarte"}
-                  logo={p?.design?.logo ?? "C"}
-                  logoImage={p?.design?.logoImage ?? null}
-                  theme={p?.design?.theme ?? 0}
+                  design={p?.design ?? {}}
                   type={p?.type ?? "stamp"}
                   stamps={c.stamps}
                   stampsRequired={p?.stamps_required ?? 10}

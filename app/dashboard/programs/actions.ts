@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireOrgRole } from "@/lib/org";
 import { translateDbError } from "@/lib/db-errors";
 import { checkStampCooldown } from "@/lib/abuse-protection";
+import type { CardDesign } from "@/lib/card-design";
 
 export interface ProgramInput {
   name: string;
@@ -14,9 +15,7 @@ export interface ProgramInput {
   stampsRequired: number;
   pointsPerReward: number;
   rewardDescription: string;
-  theme: number;
-  logo: string;
-  logoImage: string | null;
+  design: CardDesign;
 }
 
 function validate(input: ProgramInput): string | null {
@@ -30,7 +29,7 @@ function validate(input: ProgramInput): string | null {
 }
 
 function toRow(input: ProgramInput) {
-  const logo = input.logo.trim() || input.title.trim().slice(0, 1) || "C";
+  const logo = input.design.logo.trim() || input.title.trim().slice(0, 1) || "C";
   return {
     name: input.name.trim(),
     title: input.title.trim(),
@@ -38,7 +37,7 @@ function toRow(input: ProgramInput) {
     stamps_required: input.stampsRequired,
     points_per_reward: input.pointsPerReward,
     reward_description: input.rewardDescription.trim(),
-    design: { theme: input.theme, logo: logo.toUpperCase().slice(0, 2), logoImage: input.logoImage },
+    design: { ...input.design, logo: logo.toUpperCase().slice(0, 2) },
   };
 }
 

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
-import WalletCard from "@/components/WalletCard";
+import PublicWalletCard from "@/components/PublicWalletCard";
 import { isGoogleWalletConfigured } from "@/lib/google-wallet";
 
 export const dynamic = "force-dynamic";
@@ -29,11 +29,9 @@ export default async function PublicCard({ params }: { params: { serial: string 
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 gap-6">
-      <WalletCard
+      <PublicWalletCard
         title={p.title ?? (card as any).organizations?.name ?? "Treuekarte"}
-        logo={p.design?.logo ?? "C"}
-        logoImage={p.design?.logoImage ?? null}
-        theme={p.design?.theme ?? 0}
+        design={p.design ?? {}}
         type={p.type}
         stamps={(card as any).stamps}
         stampsRequired={p.stamps_required}

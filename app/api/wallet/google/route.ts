@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { THEMES } from "@/lib/themes";
+import { resolveDesign } from "@/lib/card-design";
 import { buildGoogleWalletSaveUrl, isGoogleWalletConfigured } from "@/lib/google-wallet";
 
 // Google Wallet: Klasse + Objekt werden inline im signierten JWT mitgeschickt,
@@ -31,7 +31,13 @@ export async function GET(request: NextRequest) {
   }
 
   const p = (card as any).loyalty_programs;
-  const theme = THEMES[p.design?.theme ?? 0] ?? THEMES[0];
+  const design = resolveDesign(p.design);
+  const themeColorHex =
+    design.backgroundMode === "color"
+      ? design.solidColor
+      : design.backgroundMode === "image"
+      ? "#241a0c" // Google Wallet erlaubt nur eine Volltonfarbe, kein Bild - dunkle Marken-Fallback-Farbe
+      : design.gradientFrom;
 
   const saveUrl = buildGoogleWalletSaveUrl({
     serial: (card as any).serial_number,
@@ -43,7 +49,7 @@ export async function GET(request: NextRequest) {
     stampsRequired: p.stamps_required,
     points: (card as any).points,
     pointsPerReward: p.points_per_reward,
-    themeColorHex: theme.from,
+    themeColorHex,
   });
 
   if (!saveUrl) {
