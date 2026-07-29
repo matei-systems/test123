@@ -9,7 +9,7 @@ export interface LoyaltyProgram {
   stamps_required: number;
   points_per_reward: number;
   reward_description: string | null;
-  design: { theme?: number; logo?: string } | null;
+  design: { theme?: number; logo?: string; logoImage?: string | null } | null;
   active: boolean;
   created_at: string;
 }

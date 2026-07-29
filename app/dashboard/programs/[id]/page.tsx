@@ -4,6 +4,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { issueCard, addStamp, addPoints, redeem } from "../actions";
 import { themeGradient } from "@/lib/themes";
+import DeleteProgramButton from "@/components/programs/DeleteProgramButton";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export default async function ProgramDetail({
     .from("loyalty_programs")
     .select("*")
     .eq("id", params.id)
+    .eq("org_id", org.id)
     .single();
   if (!program) notFound();
 
@@ -46,18 +48,33 @@ export default async function ProgramDetail({
         </div>
       )}
 
-      <div className="flex items-center gap-3 mt-3 mb-6 enter">
-        <div className="w-11 h-11 rounded-xl grid place-items-center font-extrabold text-white shrink-0"
-             style={{ background: themeGradient(program.design?.theme ?? 0) }}>
-          {program.design?.logo ?? "C"}
-        </div>
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">{program.title}</h1>
-          <div className="text-sm text-[#A6A099]">
-            {isStamp
-              ? `${program.stamps_required} Stempel → ${program.reward_description}`
-              : `${program.points_per_reward} Punkte → ${program.reward_description}`}
+      <div className="flex items-start justify-between gap-4 mt-3 mb-6 enter flex-wrap">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-11 h-11 rounded-xl grid place-items-center font-extrabold text-white shrink-0 overflow-hidden"
+            style={{ background: themeGradient(program.design?.theme ?? 0) }}
+          >
+            {program.design?.logoImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={program.design.logoImage} alt="" className="w-full h-full object-cover" />
+            ) : (
+              program.design?.logo ?? "C"
+            )}
           </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">{program.title}</h1>
+            <div className="text-sm text-[#A6A099]">
+              {isStamp
+                ? `${program.stamps_required} Stempel → ${program.reward_description}`
+                : `${program.points_per_reward} Punkte → ${program.reward_description}`}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href={`/dashboard/programs/${program.id}/edit`} className="btn btn-ghost text-sm">
+            Bearbeiten
+          </Link>
+          <DeleteProgramButton programId={program.id} cardCount={cards?.length ?? 0} redirectTo="/dashboard/programs" />
         </div>
       </div>
 

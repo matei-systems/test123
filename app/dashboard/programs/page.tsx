@@ -2,16 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentOrg } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
-import { createProgram } from "./actions";
-import { THEMES, themeGradient } from "@/lib/themes";
+import { themeGradient } from "@/lib/themes";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProgramsPage({
-  searchParams,
-}: {
-  searchParams: { error?: string };
-}) {
+export default async function ProgramsPage() {
   const { org } = await getCurrentOrg();
   if (!org) redirect("/dashboard/onboarding");
 
@@ -24,106 +19,55 @@ export default async function ProgramsPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight mb-1">Programme</h1>
-      <p className="text-[#A6A099] text-sm mb-6">Deine digitalen Treuekarten</p>
-
-      {searchParams?.error && (
-        <div className="mb-6 text-sm rounded-lg px-3 py-2"
-             style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
-          {searchParams.error}
-        </div>
-      )}
-
-      {/* Neues Programm */}
-      <form action={createProgram} className="card p-6 mb-8 space-y-4 enter">
-        <div className="font-semibold text-sm text-[#F4F1EC]">Neues Programm</div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="label">Programmname (intern)</label>
-            <input className="input" name="name" required placeholder="Kaffee-Treuekarte" />
-          </div>
-          <div>
-            <label className="label">Anzeigename auf der Karte</label>
-            <input className="input" name="title" required placeholder="Café Central" />
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <div>
-            <label className="label">Typ</label>
-            <select className="input" name="type" defaultValue="stamp">
-              <option value="stamp">Stempelkarte</option>
-              <option value="points">Punktekarte</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">Stempel bis Belohnung</label>
-            <input className="input" type="number" name="stamps_required" defaultValue={10} min={3} max={20} />
-          </div>
-          <div>
-            <label className="label">Punkte bis Belohnung</label>
-            <input className="input" type="number" name="points_per_reward" defaultValue={100} min={10} />
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="label">Belohnung</label>
-            <input className="input" name="reward_description" required placeholder="1 Gratis-Kaffee" />
-          </div>
-          <div>
-            <label className="label">Logo-Buchstabe</label>
-            <input className="input" name="logo" maxLength={2} defaultValue="C" />
-          </div>
-        </div>
-
+      <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <label className="label">Kartenfarbe</label>
-          <div className="flex gap-3 flex-wrap">
-            {THEMES.map((t, i) => (
-              <label key={i} className="cursor-pointer">
-                <input type="radio" name="theme" value={i} defaultChecked={i === 0} className="peer sr-only" />
-                <span
-                  className="block w-9 h-9 rounded-lg peer-checked:ring-2 peer-checked:ring-gold peer-checked:ring-offset-2 peer-checked:ring-offset-[#16131A] transition-transform hover:scale-105"
-                  style={{ background: themeGradient(i) }}
-                  title={t.name}
-                />
-              </label>
-            ))}
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight mb-1">Programme</h1>
+          <p className="text-[#A6A099] text-sm">Deine digitalen Treuekarten</p>
         </div>
+        <Link href="/dashboard/programs/new" className="btn btn-primary text-sm shrink-0">
+          + Neues Programm
+        </Link>
+      </div>
 
-        <button className="btn btn-primary">Programm speichern</button>
-      </form>
-
-      {/* Liste */}
       <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))" }}>
         {(programs ?? []).map((p: any, i: number) => (
-          <Link
-            key={p.id}
-            href={`/dashboard/programs/${p.id}`}
-            className="card card-hover p-4 block enter"
-            style={{ animationDelay: `${i * 50}ms` }}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-lg grid place-items-center font-extrabold text-white shrink-0"
-                style={{ background: themeGradient(p.design?.theme ?? 0) }}
-              >
-                {p.design?.logo ?? "C"}
-              </div>
-              <div className="min-w-0">
-                <div className="font-semibold text-sm truncate">{p.title}</div>
-                <div className="text-xs text-[#A6A099] truncate">
-                  {p.name} · {p.type === "stamp" ? "Stempelkarte" : "Punktekarte"}
+          <div key={p.id} className="card card-hover p-4 enter relative group" style={{ animationDelay: `${i * 50}ms` }}>
+            <Link href={`/dashboard/programs/${p.id}`} className="block">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-lg grid place-items-center font-extrabold text-white shrink-0 overflow-hidden"
+                  style={{ background: themeGradient(p.design?.theme ?? 0) }}
+                >
+                  {p.design?.logoImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.design.logoImage} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    p.design?.logo ?? "C"
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-sm truncate">{p.title}</div>
+                  <div className="text-xs text-[#A6A099] truncate">
+                    {p.name} · {p.type === "stamp" ? "Stempelkarte" : "Punktekarte"}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="text-xs text-[#A6A099] mt-3">Belohnung: {p.reward_description}</div>
-          </Link>
+              <div className="text-xs text-[#A6A099] mt-3">Belohnung: {p.reward_description}</div>
+            </Link>
+            <Link
+              href={`/dashboard/programs/${p.id}/edit`}
+              className="absolute top-3 right-3 w-7 h-7 rounded-lg grid place-items-center text-faint hover:text-gold-bright hover:bg-white/[0.06] transition-colors"
+              aria-label="Programm bearbeiten"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" />
+              </svg>
+            </Link>
+          </div>
         ))}
         {(!programs || programs.length === 0) && (
-          <div className="text-[#6E685F] text-sm">Noch keine Programme. Leg oben dein erstes an.</div>
+          <div className="text-[#6E685F] text-sm">Noch keine Programme. Leg dein erstes an.</div>
         )}
       </div>
     </div>

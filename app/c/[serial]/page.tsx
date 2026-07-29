@@ -29,6 +29,7 @@ export default async function PublicCard({ params }: { params: { serial: string 
       <WalletCard
         title={p.title ?? (card as any).organizations?.name ?? "Treuekarte"}
         logo={p.design?.logo ?? "C"}
+        logoImage={p.design?.logoImage ?? null}
         theme={p.design?.theme ?? 0}
         type={p.type}
         stamps={(card as any).stamps}

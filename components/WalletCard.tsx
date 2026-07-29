@@ -3,6 +3,7 @@ import { themeGradient } from "@/lib/themes";
 interface Props {
   title: string;
   logo: string;
+  logoImage?: string | null;
   theme: number;
   type: "stamp" | "points";
   stamps: number;
@@ -28,8 +29,13 @@ export default function WalletCard(p: Props) {
           <div className="text-[11px] uppercase tracking-widest opacity-80">Treuekarte</div>
           <div className="text-lg font-bold -mt-0.5">{p.title}</div>
         </div>
-        <div className="w-9 h-9 rounded-lg grid place-items-center font-extrabold bg-white/20">
-          {p.logo}
+        <div className="w-9 h-9 rounded-lg grid place-items-center font-extrabold bg-white/20 overflow-hidden shrink-0">
+          {p.logoImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={p.logoImage} alt="Logo" className="w-full h-full object-cover" />
+          ) : (
+            p.logo
+          )}
         </div>
       </div>
 

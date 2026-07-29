@@ -5,31 +5,94 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 
-// Neues Treueprogramm (Karten-Vorlage) anlegen
-export async function createProgram(formData: FormData) {
+export interface ProgramInput {
+  name: string;
+  title: string;
+  type: "stamp" | "points";
+  stampsRequired: number;
+  pointsPerReward: number;
+  rewardDescription: string;
+  theme: number;
+  logo: string;
+  logoImage: string | null;
+}
+
+function validate(input: ProgramInput): string | null {
+  if (!input.name.trim()) return "Bitte gib einen internen Programmnamen an.";
+  if (!input.title.trim()) return "Bitte gib einen Anzeigenamen für die Karte an.";
+  if (!input.rewardDescription.trim()) return "Bitte beschreibe die Belohnung.";
+  if (input.type === "stamp" && (input.stampsRequired < 3 || input.stampsRequired > 20))
+    return "Stempel bis Belohnung muss zwischen 3 und 20 liegen.";
+  if (input.type === "points" && input.pointsPerReward < 10) return "Punkte bis Belohnung muss mindestens 10 sein.";
+  return null;
+}
+
+function toRow(input: ProgramInput) {
+  return {
+    name: input.name.trim(),
+    title: input.title.trim(),
+    type: input.type,
+    stamps_required: input.stampsRequired,
+    points_per_reward: input.pointsPerReward,
+    reward_description: input.rewardDescription.trim(),
+    design: { theme: input.theme, logo: input.logo.toUpperCase().slice(0, 2), logoImage: input.logoImage },
+  };
+}
+
+// Neues Treueprogramm (Karten-Vorlage) anlegen - aufgerufen direkt aus dem
+// Wizard (Client Component), daher Rückgabewert statt redirect() im Fehlerfall,
+// damit der mehrstufige Formularzustand bei einem Fehler erhalten bleibt.
+export async function createProgram(input: ProgramInput): Promise<{ error?: string; id?: string }> {
+  const invalid = validate(input);
+  if (invalid) return { error: invalid };
+
   const { org } = await getCurrentOrg();
-  if (!org) redirect("/dashboard/onboarding");
+  if (!org) return { error: "Kein Betrieb gefunden." };
 
   const supabase = createClient();
-  const type = String(formData.get("type")) === "points" ? "points" : "stamp";
+  const { data, error } = await supabase
+    .from("loyalty_programs")
+    .insert({ org_id: org.id, ...toRow(input) })
+    .select("id")
+    .single();
 
-  const { error } = await supabase.from("loyalty_programs").insert({
-    org_id: org.id,
-    name: String(formData.get("name")),
-    title: String(formData.get("title")),
-    type,
-    stamps_required: Number(formData.get("stamps_required")) || 10,
-    points_per_reward: Number(formData.get("points_per_reward")) || 100,
-    reward_description: String(formData.get("reward_description")),
-    design: {
-      theme: Number(formData.get("theme")) || 0,
-      logo: (String(formData.get("logo")) || "C").toUpperCase().slice(0, 2),
-    },
-  });
-
-  if (error) redirect("/dashboard/programs?error=" + encodeURIComponent(error.message));
+  if (error || !data) return { error: error?.message ?? "Programm konnte nicht gespeichert werden." };
   revalidatePath("/dashboard/programs");
-  redirect("/dashboard/programs");
+  return { id: data.id };
+}
+
+// Bestehendes Programm bearbeiten
+export async function updateProgram(id: string, input: ProgramInput): Promise<{ error?: string }> {
+  const invalid = validate(input);
+  if (invalid) return { error: invalid };
+
+  const { org } = await getCurrentOrg();
+  if (!org) return { error: "Kein Betrieb gefunden." };
+
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("loyalty_programs")
+    .update(toRow(input))
+    .eq("id", id)
+    .eq("org_id", org.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/programs");
+  revalidatePath(`/dashboard/programs/${id}`);
+  return {};
+}
+
+// Programm löschen (Karten/Transaktionen/Rewards hängen per ON DELETE CASCADE daran)
+export async function deleteProgram(id: string): Promise<{ error?: string }> {
+  const { org } = await getCurrentOrg();
+  if (!org) return { error: "Kein Betrieb gefunden." };
+
+  const supabase = createClient();
+  const { error } = await supabase.from("loyalty_programs").delete().eq("id", id).eq("org_id", org.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/programs");
+  return {};
 }
 
 // Karte an einen (neuen) Kunden ausgeben
