@@ -6,6 +6,10 @@ import { buildGoogleWalletSaveUrl, upsertGoogleLoyaltyObject, isGoogleWalletConf
 // Google Wallet: Klasse + Objekt werden inline im signierten JWT mitgeschickt,
 // daher genügt hier ein Redirect auf https://pay.google.com/gp/v/save/<jwt>.
 // Bleibt inaktiv (501), bis GOOGLE_WALLET_* Variablen gesetzt sind.
+// force-dynamic: der JWT enthält den aktuellen Stempelstand - ohne das würde
+// Next.js den allerersten Save-Link dauerhaft zwischenspeichern.
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   if (!isGoogleWalletConfigured()) {
     return NextResponse.json(

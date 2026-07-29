@@ -7,6 +7,8 @@ import { isAppleWalletConfigured } from "@/lib/apple-wallet";
 // letzten Kartenänderung (cards.updated_at), keine eigene Versionstabelle
 // nötig. Ohne Authorization-Header (Apple schickt hier keinen), aber nur für
 // bereits registrierte Geräte relevant.
+export const dynamic = "force-dynamic";
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { deviceLibraryId: string; passTypeId: string } }

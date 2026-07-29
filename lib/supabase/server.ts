@@ -22,6 +22,12 @@ export function createClient() {
           }
         },
       },
+      // Explizit, statt sich allein auf die automatische Dynamic-Erkennung
+      // durch cookies() zu verlassen - siehe ausführliche Begründung in
+      // lib/supabase/admin.ts.
+      global: {
+        fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
+      },
     }
   );
 }

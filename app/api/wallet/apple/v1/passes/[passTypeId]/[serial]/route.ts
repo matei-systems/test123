@@ -16,6 +16,11 @@ function checkAuth(request: NextRequest, serial: string): boolean {
 // einer Push-Benachrichtigung (oder periodisch) aufgerufen, um die neuesten
 // Daten zu holen. If-Modified-Since erspart unnötige Neuerzeugung, wenn sich
 // die Karte seitdem nicht geändert hat.
+// force-dynamic: liest nur den dynamischen Pfad-Parameter, keine
+// searchParams/headers zum Zeitpunkt der Cache-Entscheidung - ohne dieses
+// Flag würde Next.js den allerersten Pass dauerhaft zwischenspeichern.
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest, { params }: { params: { passTypeId: string; serial: string } }) {
   if (!isAppleWalletConfigured()) return new NextResponse(null, { status: 501 });
   const { serial } = params;

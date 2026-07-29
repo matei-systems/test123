@@ -7,6 +7,11 @@ import { buildApplePass, isAppleWalletConfigured } from "@/lib/apple-wallet";
 // direkt aus - Safari/iOS erkennen den Content-Type automatisch und bieten
 // "Zu Wallet hinzufügen" an. Bleibt inaktiv (501), bis die Zertifikate
 // hinterlegt sind.
+// force-dynamic: sonst würde Next.js den allerersten erzeugten Pass
+// dauerhaft zwischenspeichern und immer denselben (veralteten) Stempelstand
+// ausliefern - siehe ausführlicher Kommentar in api/cards/[serial]/status.
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   if (!isAppleWalletConfigured()) {
     return NextResponse.json(
