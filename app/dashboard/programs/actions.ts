@@ -62,7 +62,7 @@ export async function createProgram(input: ProgramInput): Promise<{ error?: stri
     .single();
 
   if (error || !data) return { error: error ? translateDbError(error.message) : "Programm konnte nicht gespeichert werden." };
-  await upsertGoogleLoyaltyClass({ programId: data.id, orgName: org.name, programTitle: input.title }).catch(() => {});
+  upsertGoogleLoyaltyClass({ programId: data.id, orgName: org.name, programTitle: input.title }).catch(() => {});
   revalidatePath("/dashboard/programs");
   return { id: data.id };
 }
@@ -84,7 +84,7 @@ export async function updateProgram(id: string, input: ProgramInput): Promise<{ 
     .eq("org_id", org.id);
 
   if (error) return { error: translateDbError(error.message) };
-  await upsertGoogleLoyaltyClass({ programId: id, orgName: org.name, programTitle: input.title }).catch(() => {});
+  upsertGoogleLoyaltyClass({ programId: id, orgName: org.name, programTitle: input.title }).catch(() => {});
   revalidatePath("/dashboard/programs");
   revalidatePath(`/dashboard/programs/${id}`);
   return {};
@@ -148,7 +148,7 @@ export async function issueCard(formData: FormData) {
     );
   }
 
-  await registerWalletObjectsForNewCard(newCard.id).catch(() => {});
+  registerWalletObjectsForNewCard(newCard.id).catch(() => {});
   revalidatePath(`/dashboard/programs/${programId}`);
 }
 
@@ -194,7 +194,7 @@ export async function addStamp(formData: FormData) {
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
-  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
+  notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath(`/dashboard/programs/${programId}`);
 }
 
@@ -235,7 +235,7 @@ export async function addPoints(formData: FormData) {
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
-  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
+  notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath(`/dashboard/programs/${programId}`);
 }
 
@@ -294,6 +294,6 @@ export async function redeem(formData: FormData) {
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
-  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
+  notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath(`/dashboard/programs/${programId}`);
 }

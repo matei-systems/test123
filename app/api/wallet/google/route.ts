@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
   // Objekt proaktiv anlegen/aktualisieren, damit es beim Speichern bereits
   // existiert (relevant falls die Karte vorher noch nie ausgegeben/upserted
   // wurde) - Fehler hier dürfen den Save-Link nicht verhindern.
-  await upsertGoogleLoyaltyObject(objectInput).catch(() => {});
+  upsertGoogleLoyaltyObject(objectInput).catch(() => {});
 
   const saveUrl = buildGoogleWalletSaveUrl(objectInput);
 

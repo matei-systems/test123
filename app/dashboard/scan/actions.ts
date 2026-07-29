@@ -108,7 +108,7 @@ export async function scanStamp(cardId: string): Promise<{ error?: string; card?
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
-  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
+  notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath("/dashboard");
   return loadCard(cardId);
 }
@@ -132,7 +132,7 @@ export async function scanAddPoints(cardId: string): Promise<{ error?: string; c
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
-  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
+  notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath("/dashboard");
   return loadCard(cardId);
 }
@@ -167,7 +167,7 @@ export async function scanRedeem(cardId: string): Promise<{ error?: string; card
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
-  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
+  notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath("/dashboard");
   return loadCard(cardId);
 }

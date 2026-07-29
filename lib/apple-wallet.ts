@@ -100,11 +100,16 @@ export async function buildApplePass(input: ApplePassInput): Promise<Buffer | nu
       { key: "info", label: "Info", value: `Digitale Treuekarte von ${input.orgName}` },
       { key: "serial", label: "Karten-ID", value: input.serial.slice(0, 8).toUpperCase() }
     );
-    pass.setBarcodes({
-      format: "PKBarcodeFormatQR",
-      message: `${appUrl}/c/${input.serial}`,
-      messageEncoding: "iso-8859-1",
-    });
+    // QR ist das primäre Format (von Apple selbst für Wallet-Karten
+    // empfohlen und von jedem Kamera-Scanner lesbar, siehe Scanner.tsx).
+    // Code128 als zweites, optionales Format daneben - falls ein Betrieb
+    // einen klassischen Laser-/Linearscanner am Kassenbereich hat, der QR
+    // nicht liest, funktioniert die Karte trotzdem. Apple zeigt nur das
+    // erste Format an, hält beide aber im Pass vor.
+    pass.setBarcodes(
+      { format: "PKBarcodeFormatQR", message: `${appUrl}/c/${input.serial}`, messageEncoding: "iso-8859-1" },
+      { format: "PKBarcodeFormatCode128", message: input.serial, messageEncoding: "iso-8859-1" }
+    );
 
     return pass.getAsBuffer();
   } catch (e: any) {

@@ -70,6 +70,6 @@ export async function joinProgram(
     .single();
   if (cardErr || !card) return { error: translateDbError(cardErr?.message) };
 
-  await registerWalletObjectsForNewCard(card.id).catch(() => {});
+  registerWalletObjectsForNewCard(card.id).catch(() => {});
   return { serial: card.serial_number };
 }

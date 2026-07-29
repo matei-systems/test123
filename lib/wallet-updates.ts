@@ -3,6 +3,17 @@ import { resolveDesign, themeColorHex } from "@/lib/card-design";
 import { isGoogleWalletConfigured, patchGoogleLoyaltyPoints, upsertGoogleLoyaltyObject, type GoogleObjectInput } from "@/lib/google-wallet";
 import { isAppleWalletConfigured, sendApplePushNotifications } from "@/lib/apple-wallet";
 
+// Wichtig für alle Aufrufer: diese beiden Funktionen werden überall bewusst
+// OHNE await aufgerufen ("Feuer und vergessen"). Next.js 14 hat noch kein
+// after()/waitUntil() (das kam erst mit Next.js 15) - ein synchron
+// awaiteter Aufruf hier würde die Stempel-Vergabe für das Personal um bis
+// zu den unten stehenden Timeouts (5-6s) verzögern, sobald echte Google-/
+// Apple-Zugangsdaten hinterlegt sind. Das würde das Ziel "gesamter Ablauf
+// unter 5 Sekunden" direkt verletzen. Die Kartenänderung selbst (DB-Schreibung)
+// ist zu diesem Zeitpunkt bereits abgeschlossen - nur die Wallet-Synchronisierung
+// läuft im Hintergrund weiter, während die Server Action dem Personal längst
+// eine Antwort geschickt hat.
+
 async function loadWalletCardInput(cardId: string): Promise<GoogleObjectInput | null> {
   const admin = createAdminClient();
   const { data: card } = await admin
