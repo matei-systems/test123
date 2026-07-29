@@ -9,11 +9,11 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { org } = await getCurrentOrg();
+  const { org, role } = await getCurrentOrg();
 
   return (
     <div className="min-h-screen md:grid" style={{ gridTemplateColumns: "236px 1fr" }}>
-      <Sidebar orgName={org?.name ?? null} signOutAction={signOut} />
+      <Sidebar orgName={org?.name ?? null} role={role} signOutAction={signOut} />
       <main className="p-5 md:p-8 max-w-6xl w-full">{children}</main>
     </div>
   );

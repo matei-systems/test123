@@ -4,19 +4,24 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import SubmitButton from "@/components/SubmitButton";
+import { hasMinRole, type Role } from "@/lib/permissions";
 
 const LINKS = [
-  { href: "/dashboard", label: "Übersicht" },
-  { href: "/dashboard/scan", label: "Scannen" },
-  { href: "/dashboard/programs", label: "Programme" },
-  { href: "/dashboard/customers", label: "Kunden" },
+  { href: "/dashboard", label: "Übersicht", min: "staff" as Role },
+  { href: "/dashboard/scan", label: "Scannen", min: "staff" as Role },
+  { href: "/dashboard/programs", label: "Programme", min: "staff" as Role },
+  { href: "/dashboard/customers", label: "Kunden", min: "staff" as Role },
+  { href: "/dashboard/activity", label: "Aktivität", min: "admin" as Role },
+  { href: "/dashboard/locations", label: "Standorte", min: "admin" as Role },
+  { href: "/dashboard/team", label: "Team", min: "staff" as Role },
 ];
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+function NavLinks({ onNavigate, role }: { onNavigate?: () => void; role: Role | null }) {
   const pathname = usePathname();
+  const links = LINKS.filter((l) => hasMinRole(role, l.min));
   return (
     <>
-      {LINKS.map((l) => {
+      {links.map((l) => {
         const active = l.href === "/dashboard" ? pathname === l.href : pathname.startsWith(l.href);
         return (
           <Link
@@ -51,9 +56,11 @@ function Logo({ orgName }: { orgName: string | null }) {
 
 export default function Sidebar({
   orgName,
+  role,
   signOutAction,
 }: {
   orgName: string | null;
+  role: Role | null;
   signOutAction: (formData: FormData) => void | Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
@@ -105,7 +112,7 @@ export default function Sidebar({
                 </svg>
               </button>
             </div>
-            <NavLinks onNavigate={() => setOpen(false)} />
+            <NavLinks onNavigate={() => setOpen(false)} role={role} />
             <div className="mt-auto pt-3">
               <form action={signOutAction}>
                 <SubmitButton pendingText="Wird abgemeldet…" className="btn btn-ghost w-full text-sm">
@@ -120,7 +127,7 @@ export default function Sidebar({
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col border-r border-white/[0.07] bg-[#0E0E16] p-4 gap-1">
         <Logo orgName={orgName} />
-        <NavLinks />
+        <NavLinks role={role} />
         <div className="mt-auto pt-3">
           <form action={signOutAction}>
             <button className="btn btn-ghost w-full text-sm">Abmelden</button>

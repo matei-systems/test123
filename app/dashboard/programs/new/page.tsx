@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentOrg } from "@/lib/org";
+import { hasMinRole } from "@/lib/permissions";
 import ProgramWizard from "@/components/programs/ProgramWizard";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewProgramPage() {
-  const { org } = await getCurrentOrg();
+  const { org, role } = await getCurrentOrg();
   if (!org) redirect("/dashboard/onboarding");
+  if (!hasMinRole(role, "admin")) redirect("/dashboard/programs");
 
   return (
     <div>

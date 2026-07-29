@@ -271,19 +271,30 @@ alter table reward_redemptions enable row level security;
 alter table campaigns          enable row level security;
 
 -- profiles: jeder sieht/ändert nur sich selbst
+-- (drop-if-exists davor: dieses Skript muss beliebig oft re-runnable sein,
+-- siehe Kommentar am Anfang des P7-Abschnitts weiter unten)
+drop policy if exists profiles_self_select on profiles;
 create policy profiles_self_select on profiles for select using (id = auth.uid());
+drop policy if exists profiles_self_upsert on profiles;
 create policy profiles_self_upsert on profiles for insert with check (id = auth.uid());
+drop policy if exists profiles_self_update on profiles;
 create policy profiles_self_update on profiles for update using (id = auth.uid());
 
 -- organizations: Mitglieder dürfen lesen; nur Admins/Owner ändern; jeder
 -- eingeloggte User darf eine neue Org anlegen (er wird ihr Owner).
+drop policy if exists org_select on organizations;
 create policy org_select on organizations for select using (is_org_member(id));
+drop policy if exists org_insert on organizations;
 create policy org_insert on organizations for insert with check (owner_id = auth.uid());
+drop policy if exists org_update on organizations;
 create policy org_update on organizations for update using (is_org_admin(id));
+drop policy if exists org_delete on organizations;
 create policy org_delete on organizations for delete using (is_org_admin(id));
 
 -- memberships: Mitglieder der Org sehen die Mitgliederliste; Admins verwalten
+drop policy if exists mem_select on memberships;
 create policy mem_select on memberships for select using (is_org_member(org_id));
+drop policy if exists mem_write on memberships;
 create policy mem_write  on memberships for all    using (is_org_admin(org_id))
                                                    with check (is_org_admin(org_id));
 
@@ -334,3 +345,151 @@ drop trigger if exists trg_user_created on auth.users;
 create trigger trg_user_created
   after insert on auth.users
   for each row execute function handle_new_user();
+
+-- ============================================================================
+--  P7: Team & Zugriff
+--  - invitations: Mitarbeiter per E-Mail einladen, Annahme per Token.
+--  - memberships.location_id: bereitet Mehr-Standort-Betriebe vor (Zuordnung
+--    Mitarbeiter -> Filiale, taggt automatisch die Transaktionen dieser
+--    Person mit dem Standort).
+--  - RLS wird für mehrere Tabellen von "jedes Mitglied darf alles" auf
+--    "lesen = Mitglied, schreiben/ändern/löschen = Admin/Owner" verschärft.
+--    transactions/reward_redemptions bleiben zusätzlich ein unveränderliches
+--    Journal: nur INSERT + SELECT, nie UPDATE/DELETE (Audit-Sicherheit).
+--  Re-runnable: nutzt "if not exists" / "drop policy if exists" durchgehend,
+--  damit dieses Skript beliebig oft gegen dieselbe Datenbank laufen darf.
+-- ============================================================================
+
+do $$ begin
+  create type invitation_status as enum ('pending', 'accepted', 'revoked', 'expired');
+exception when duplicate_object then null; end $$;
+
+create table if not exists invitations (
+  id          uuid primary key default gen_random_uuid(),
+  org_id      uuid not null references organizations(id) on delete cascade,
+  email       text not null,
+  role        membership_role not null default 'staff',
+  token       text unique not null,
+  status      invitation_status not null default 'pending',
+  invited_by  uuid references auth.users(id) on delete set null,
+  expires_at  timestamptz not null default (now() + interval '7 days'),
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists idx_invitations_org    on invitations(org_id);
+create index if not exists idx_invitations_token  on invitations(token);
+create index if not exists idx_invitations_email  on invitations(org_id, email) where status = 'pending';
+
+alter table memberships add column if not exists location_id uuid references locations(id) on delete set null;
+
+-- memberships.user_id zeigte bisher auf auth.users(id). PostgREST kann darüber
+-- aber KEIN memberships -> profiles Embed auflösen, weil beide Tabellen nur
+-- unabhängig voneinander auf auth.users zeigen, nicht direkt aufeinander -
+-- das ist beim Testen der Team-Seite aufgefallen (memberships.select("...,
+-- profiles(email, full_name)") lieferte 0 Zeilen). profiles.id == auth.users.id
+-- ist 1:1 garantiert (siehe handle_new_user-Trigger), daher ist es sicher und
+-- der Standard-Supabase-Weg, memberships.user_id stattdessen auf profiles(id)
+-- zeigen zu lassen - danach funktioniert das Embed nativ.
+alter table memberships drop constraint if exists memberships_user_id_fkey;
+alter table memberships add constraint memberships_user_id_fkey
+  foreign key (user_id) references profiles(id) on delete cascade;
+
+alter table invitations enable row level security;
+
+drop policy if exists inv_select on invitations;
+create policy inv_select on invitations for select using (is_org_admin(org_id));
+drop policy if exists inv_write on invitations;
+create policy inv_write on invitations for all using (is_org_admin(org_id)) with check (is_org_admin(org_id));
+
+-- profiles: zusätzlich zum bestehenden "ich sehe mich selbst" dürfen
+-- Team-Mitglieder sich gegenseitig sehen (Name/E-Mail auf der Team-Seite).
+-- Mehrere SELECT-Policies werden von Postgres mit OR verknüpft, die
+-- bestehende profiles_self_select-Policy bleibt zusätzlich gültig.
+drop policy if exists profiles_org_select on profiles;
+create policy profiles_org_select on profiles for select using (
+  exists (
+    select 1 from memberships m1
+    join memberships m2 on m1.org_id = m2.org_id
+    where m1.user_id = auth.uid() and m2.user_id = profiles.id
+  )
+);
+
+-- Programme, Standorte, Belohnungs-Katalog, Kampagnen: Konfiguration des
+-- Betriebs -> lesen dürfen alle Mitglieder (Personal braucht das für die
+-- tägliche Arbeit), ändern nur Admin/Owner.
+drop policy if exists prog_all on loyalty_programs;
+drop policy if exists prog_select on loyalty_programs;
+create policy prog_select on loyalty_programs for select using (is_org_member(org_id));
+drop policy if exists prog_insert on loyalty_programs;
+create policy prog_insert on loyalty_programs for insert with check (is_org_admin(org_id));
+drop policy if exists prog_update on loyalty_programs;
+create policy prog_update on loyalty_programs for update using (is_org_admin(org_id));
+drop policy if exists prog_delete on loyalty_programs;
+create policy prog_delete on loyalty_programs for delete using (is_org_admin(org_id));
+
+drop policy if exists loc_all on locations;
+drop policy if exists loc_select on locations;
+create policy loc_select on locations for select using (is_org_member(org_id));
+drop policy if exists loc_insert on locations;
+create policy loc_insert on locations for insert with check (is_org_admin(org_id));
+drop policy if exists loc_update on locations;
+create policy loc_update on locations for update using (is_org_admin(org_id));
+drop policy if exists loc_delete on locations;
+create policy loc_delete on locations for delete using (is_org_admin(org_id));
+
+drop policy if exists rewards_all on rewards;
+drop policy if exists rewards_select on rewards;
+create policy rewards_select on rewards for select using (is_org_member(org_id));
+drop policy if exists rewards_insert on rewards;
+create policy rewards_insert on rewards for insert with check (is_org_admin(org_id));
+drop policy if exists rewards_update on rewards;
+create policy rewards_update on rewards for update using (is_org_admin(org_id));
+drop policy if exists rewards_delete on rewards;
+create policy rewards_delete on rewards for delete using (is_org_admin(org_id));
+
+drop policy if exists camp_all on campaigns;
+drop policy if exists camp_select on campaigns;
+create policy camp_select on campaigns for select using (is_org_member(org_id));
+drop policy if exists camp_insert on campaigns;
+create policy camp_insert on campaigns for insert with check (is_org_admin(org_id));
+drop policy if exists camp_update on campaigns;
+create policy camp_update on campaigns for update using (is_org_admin(org_id));
+drop policy if exists camp_delete on campaigns;
+create policy camp_delete on campaigns for delete using (is_org_admin(org_id));
+
+-- Kunden/Karten: jedes Mitglied darf lesen/anlegen/ändern (Personal gibt
+-- Karten aus und stempelt), löschen ist Admin/Owner vorbehalten.
+drop policy if exists cust_all on customers;
+drop policy if exists cust_select on customers;
+create policy cust_select on customers for select using (is_org_member(org_id));
+drop policy if exists cust_insert on customers;
+create policy cust_insert on customers for insert with check (is_org_member(org_id));
+drop policy if exists cust_update on customers;
+create policy cust_update on customers for update using (is_org_member(org_id));
+drop policy if exists cust_delete on customers;
+create policy cust_delete on customers for delete using (is_org_admin(org_id));
+
+drop policy if exists cards_all on cards;
+drop policy if exists cards_select on cards;
+create policy cards_select on cards for select using (is_org_member(org_id));
+drop policy if exists cards_insert on cards;
+create policy cards_insert on cards for insert with check (is_org_member(org_id));
+drop policy if exists cards_update on cards;
+create policy cards_update on cards for update using (is_org_member(org_id));
+drop policy if exists cards_delete on cards;
+create policy cards_delete on cards for delete using (is_org_admin(org_id));
+
+-- transactions/reward_redemptions: unveränderliches Buchungsjournal. Jedes
+-- Mitglied darf Buchungen anlegen (stempeln/einlösen) und lesen, aber NIE
+-- nachträglich ändern oder löschen - das ist ein Audit-Grundsatz.
+drop policy if exists tx_all on transactions;
+drop policy if exists tx_select on transactions;
+create policy tx_select on transactions for select using (is_org_member(org_id));
+drop policy if exists tx_insert on transactions;
+create policy tx_insert on transactions for insert with check (is_org_member(org_id));
+
+drop policy if exists redeem_all on reward_redemptions;
+drop policy if exists redeem_select on reward_redemptions;
+create policy redeem_select on reward_redemptions for select using (is_org_member(org_id));
+drop policy if exists redeem_insert on reward_redemptions;
+create policy redeem_insert on reward_redemptions for insert with check (is_org_member(org_id));

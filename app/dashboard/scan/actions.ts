@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { translateDbError } from "@/lib/db-errors";
 import { checkStampCooldown } from "@/lib/abuse-protection";
+import { requireOrgRole } from "@/lib/org";
 
 export interface ScannedCard {
   id: string;
@@ -78,6 +79,9 @@ export async function lookupScannedCard(rawText: string): Promise<{ error?: stri
 }
 
 export async function scanStamp(cardId: string): Promise<{ error?: string; card?: ScannedCard }> {
+  const gate = await requireOrgRole("staff");
+  if (!gate.ok) return { error: gate.error };
+
   const supabase = createClient();
   const cooldownError = await checkStampCooldown(supabase, cardId);
   if (cooldownError) return { error: cooldownError };
@@ -95,12 +99,22 @@ export async function scanStamp(cardId: string): Promise<{ error?: string; card?
   const { error: updErr } = await supabase.from("cards").update({ stamps: next }).eq("id", cardId);
   if (updErr) return { error: translateDbError(updErr.message) };
 
-  await supabase.from("transactions").insert({ org_id: card.org_id, card_id: cardId, type: "stamp", amount: 1 });
+  await supabase.from("transactions").insert({
+    org_id: card.org_id,
+    card_id: cardId,
+    type: "stamp",
+    amount: 1,
+    staff_id: gate.user.id,
+    location_id: gate.locationId,
+  });
   revalidatePath("/dashboard");
   return loadCard(cardId);
 }
 
 export async function scanAddPoints(cardId: string): Promise<{ error?: string; card?: ScannedCard }> {
+  const gate = await requireOrgRole("staff");
+  if (!gate.ok) return { error: gate.error };
+
   const supabase = createClient();
   const { data: card, error: fetchErr } = await supabase.from("cards").select("points, org_id").eq("id", cardId).single();
   if (fetchErr || !card) return { error: "Karte nicht gefunden." };
@@ -108,12 +122,22 @@ export async function scanAddPoints(cardId: string): Promise<{ error?: string; c
   const { error: updErr } = await supabase.from("cards").update({ points: card.points + 10 }).eq("id", cardId);
   if (updErr) return { error: translateDbError(updErr.message) };
 
-  await supabase.from("transactions").insert({ org_id: card.org_id, card_id: cardId, type: "points", amount: 10 });
+  await supabase.from("transactions").insert({
+    org_id: card.org_id,
+    card_id: cardId,
+    type: "points",
+    amount: 10,
+    staff_id: gate.user.id,
+    location_id: gate.locationId,
+  });
   revalidatePath("/dashboard");
   return loadCard(cardId);
 }
 
 export async function scanRedeem(cardId: string): Promise<{ error?: string; card?: ScannedCard }> {
+  const gate = await requireOrgRole("staff");
+  if (!gate.ok) return { error: gate.error };
+
   const supabase = createClient();
   const { data: card, error: fetchErr } = await supabase
     .from("cards")
@@ -131,8 +155,15 @@ export async function scanRedeem(cardId: string): Promise<{ error?: string; card
   const { error: updErr } = await supabase.from("cards").update(update).eq("id", cardId);
   if (updErr) return { error: translateDbError(updErr.message) };
 
-  await supabase.from("reward_redemptions").insert({ org_id: card.org_id, card_id: cardId });
-  await supabase.from("transactions").insert({ org_id: card.org_id, card_id: cardId, type: "redeem", amount: 1 });
+  await supabase.from("reward_redemptions").insert({ org_id: card.org_id, card_id: cardId, staff_id: gate.user.id });
+  await supabase.from("transactions").insert({
+    org_id: card.org_id,
+    card_id: cardId,
+    type: "redeem",
+    amount: 1,
+    staff_id: gate.user.id,
+    location_id: gate.locationId,
+  });
   revalidatePath("/dashboard");
   return loadCard(cardId);
 }

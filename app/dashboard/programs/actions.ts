@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentOrg } from "@/lib/org";
+import { requireOrgRole } from "@/lib/org";
 import { translateDbError } from "@/lib/db-errors";
 import { checkStampCooldown } from "@/lib/abuse-protection";
 
@@ -49,8 +49,9 @@ export async function createProgram(input: ProgramInput): Promise<{ error?: stri
   const invalid = validate(input);
   if (invalid) return { error: invalid };
 
-  const { org } = await getCurrentOrg();
-  if (!org) return { error: "Kein Betrieb gefunden." };
+  const gate = await requireOrgRole("admin");
+  if (!gate.ok) return { error: gate.error };
+  const { org } = gate;
 
   const supabase = createClient();
   const { data, error } = await supabase
@@ -69,8 +70,9 @@ export async function updateProgram(id: string, input: ProgramInput): Promise<{ 
   const invalid = validate(input);
   if (invalid) return { error: invalid };
 
-  const { org } = await getCurrentOrg();
-  if (!org) return { error: "Kein Betrieb gefunden." };
+  const gate = await requireOrgRole("admin");
+  if (!gate.ok) return { error: gate.error };
+  const { org } = gate;
 
   const supabase = createClient();
   const { error } = await supabase
@@ -87,8 +89,9 @@ export async function updateProgram(id: string, input: ProgramInput): Promise<{ 
 
 // Programm löschen (Karten/Transaktionen/Rewards hängen per ON DELETE CASCADE daran)
 export async function deleteProgram(id: string): Promise<{ error?: string }> {
-  const { org } = await getCurrentOrg();
-  if (!org) return { error: "Kein Betrieb gefunden." };
+  const gate = await requireOrgRole("admin");
+  if (!gate.ok) return { error: gate.error };
+  const { org } = gate;
 
   const supabase = createClient();
   const { error } = await supabase.from("loyalty_programs").delete().eq("id", id).eq("org_id", org.id);
@@ -102,6 +105,10 @@ export async function deleteProgram(id: string): Promise<{ error?: string }> {
 export async function issueCard(formData: FormData) {
   const orgId = String(formData.get("orgId"));
   const programId = String(formData.get("programId"));
+
+  const gate = await requireOrgRole("staff");
+  if (!gate.ok) redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(gate.error));
+
   const supabase = createClient();
 
   const { data: cust, error: cErr } = await supabase
@@ -138,6 +145,10 @@ export async function issueCard(formData: FormData) {
 export async function addStamp(formData: FormData) {
   const cardId = String(formData.get("cardId"));
   const programId = String(formData.get("programId"));
+
+  const gate = await requireOrgRole("staff");
+  if (!gate.ok) redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(gate.error));
+
   const supabase = createClient();
 
   const { data: card, error: fetchErr } = await supabase
@@ -169,6 +180,8 @@ export async function addStamp(formData: FormData) {
     card_id: cardId,
     type: "stamp",
     amount: 1,
+    staff_id: gate.user.id,
+    location_id: gate.locationId,
   });
   revalidatePath(`/dashboard/programs/${programId}`);
 }
@@ -177,6 +190,10 @@ export async function addStamp(formData: FormData) {
 export async function addPoints(formData: FormData) {
   const cardId = String(formData.get("cardId"));
   const programId = String(formData.get("programId"));
+
+  const gate = await requireOrgRole("staff");
+  if (!gate.ok) redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(gate.error));
+
   const supabase = createClient();
 
   const { data: card, error: fetchErr } = await supabase
@@ -203,6 +220,8 @@ export async function addPoints(formData: FormData) {
     card_id: cardId,
     type: "points",
     amount: 10,
+    staff_id: gate.user.id,
+    location_id: gate.locationId,
   });
   revalidatePath(`/dashboard/programs/${programId}`);
 }
@@ -211,6 +230,10 @@ export async function addPoints(formData: FormData) {
 export async function redeem(formData: FormData) {
   const cardId = String(formData.get("cardId"));
   const programId = String(formData.get("programId"));
+
+  const gate = await requireOrgRole("staff");
+  if (!gate.ok) redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(gate.error));
+
   const supabase = createClient();
 
   const { data: card, error: fetchErr } = await supabase
@@ -248,12 +271,15 @@ export async function redeem(formData: FormData) {
   await supabase.from("reward_redemptions").insert({
     org_id: (card as any).org_id,
     card_id: cardId,
+    staff_id: gate.user.id,
   });
   await supabase.from("transactions").insert({
     org_id: (card as any).org_id,
     card_id: cardId,
     type: "redeem",
     amount: 1,
+    staff_id: gate.user.id,
+    location_id: gate.locationId,
   });
   revalidatePath(`/dashboard/programs/${programId}`);
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentOrg } from "@/lib/org";
+import { hasMinRole } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import ProgramWizard from "@/components/programs/ProgramWizard";
 import type { ProgramInput } from "@/app/dashboard/programs/actions";
@@ -8,8 +9,9 @@ import type { ProgramInput } from "@/app/dashboard/programs/actions";
 export const dynamic = "force-dynamic";
 
 export default async function EditProgramPage({ params }: { params: { id: string } }) {
-  const { org } = await getCurrentOrg();
+  const { org, role } = await getCurrentOrg();
   if (!org) redirect("/dashboard/onboarding");
+  if (!hasMinRole(role, "admin")) redirect(`/dashboard/programs/${params.id}`);
 
   const supabase = createClient();
   const { data: program } = await supabase

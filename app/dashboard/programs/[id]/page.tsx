@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { getCurrentOrg } from "@/lib/org";
+import { hasMinRole } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { issueCard, addStamp, addPoints, redeem } from "../actions";
 import { themeGradient } from "@/lib/themes";
@@ -17,8 +18,9 @@ export default async function ProgramDetail({
   params: { id: string };
   searchParams: { error?: string };
 }) {
-  const { org } = await getCurrentOrg();
+  const { org, role } = await getCurrentOrg();
   if (!org) redirect("/dashboard/onboarding");
+  const canManage = hasMinRole(role, "admin");
 
   const supabase = createClient();
   const { data: program } = await supabase
@@ -75,12 +77,14 @@ export default async function ProgramDetail({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href={`/dashboard/programs/${program.id}/edit`} className="btn btn-ghost text-sm">
-            Bearbeiten
-          </Link>
-          <DeleteProgramButton programId={program.id} cardCount={cards?.length ?? 0} redirectTo="/dashboard/programs" />
-        </div>
+        {canManage && (
+          <div className="flex items-center gap-2">
+            <Link href={`/dashboard/programs/${program.id}/edit`} className="btn btn-ghost text-sm">
+              Bearbeiten
+            </Link>
+            <DeleteProgramButton programId={program.id} cardCount={cards?.length ?? 0} redirectTo="/dashboard/programs" />
+          </div>
+        )}
       </div>
 
       {/* Selbstanmeldung per QR */}
