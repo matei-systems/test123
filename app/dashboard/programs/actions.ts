@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { translateDbError } from "@/lib/db-errors";
+import { checkStampCooldown } from "@/lib/abuse-protection";
 
 export interface ProgramInput {
   name: string;
@@ -149,6 +150,11 @@ export async function addStamp(formData: FormData) {
       `/dashboard/programs/${programId}?error=` +
         encodeURIComponent(fetchErr ? translateDbError(fetchErr.message) : "Karte nicht gefunden.")
     );
+  }
+
+  const cooldownError = await checkStampCooldown(supabase, cardId);
+  if (cooldownError) {
+    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(cooldownError));
   }
 
   const req = (card as any).loyalty_programs?.stamps_required ?? 10;

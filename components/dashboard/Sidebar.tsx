@@ -7,6 +7,7 @@ import SubmitButton from "@/components/SubmitButton";
 
 const LINKS = [
   { href: "/dashboard", label: "Übersicht" },
+  { href: "/dashboard/scan", label: "Scannen" },
   { href: "/dashboard/programs", label: "Programme" },
   { href: "/dashboard/customers", label: "Kunden" },
 ];

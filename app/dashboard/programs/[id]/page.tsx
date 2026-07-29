@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import QRCode from "qrcode";
 import { getCurrentOrg } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { issueCard, addStamp, addPoints, redeem } from "../actions";
@@ -35,6 +36,9 @@ export default async function ProgramDetail({
     .order("created_at", { ascending: false });
 
   const isStamp = program.type === "stamp";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const joinUrl = `${appUrl}/j/${program.id}`;
+  const joinQr = await QRCode.toDataURL(joinUrl, { margin: 1, width: 140, color: { dark: "#111111", light: "#ffffff" } });
 
   return (
     <div>
@@ -79,7 +83,27 @@ export default async function ProgramDetail({
         </div>
       </div>
 
-      {/* Neue Karte ausgeben */}
+      {/* Selbstanmeldung per QR */}
+      <div className="card p-5 mb-6 enter flex flex-wrap items-center gap-5" style={{ animationDelay: "30ms" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={joinQr} alt="QR-Code zur Selbstanmeldung" className="w-20 h-20 rounded-lg bg-white p-1.5 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold text-sm text-[#F4F1EC] mb-1">Kunden melden sich selbst an</div>
+          <div className="text-xs text-[#A6A099] mb-2">
+            QR-Code am Tresen aufstellen — Kunde scannt, trägt Namen ein, Karte ist fertig. Kein Personal-Aufwand nötig.
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/poster/${program.id}`} target="_blank" className="btn btn-primary text-sm">
+              Aufsteller herunterladen
+            </Link>
+            <Link href={`/j/${program.id}`} target="_blank" className="btn btn-ghost text-sm">
+              Seite öffnen ↗
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Neue Karte ausgeben (manuell durch Personal) */}
       <form action={issueCard} className="card p-5 mb-8 enter" style={{ animationDelay: "60ms" }}>
         <div className="font-semibold text-sm text-[#F4F1EC] mb-3">Karte an Kunden ausgeben</div>
         <input type="hidden" name="orgId" value={org.id} />

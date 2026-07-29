@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import WalletCard from "@/components/WalletCard";
+import { isGoogleWalletConfigured } from "@/lib/google-wallet";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,8 @@ export default async function PublicCard({ params }: { params: { serial: string 
     width: 160,
     color: { dark: "#111111", light: "#ffffff" },
   });
+
+  const googleWalletActive = isGoogleWalletConfigured();
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 gap-6">
@@ -50,15 +53,25 @@ export default async function PublicCard({ params }: { params: { serial: string 
           <span>Zu Apple Wallet hinzufügen</span>
           <span className="text-[10px] uppercase tracking-wide bg-white/15 px-2 py-0.5 rounded-full">Bald verfügbar</span>
         </button>
-        <button
-          type="button"
-          disabled
-          className="btn w-full flex-col gap-1 disabled:cursor-not-allowed"
-          style={{ background: "#fff", color: "#111", opacity: 0.6 }}
-        >
-          <span>Zu Google Wallet hinzufügen</span>
-          <span className="text-[10px] uppercase tracking-wide bg-black/10 px-2 py-0.5 rounded-full">Bald verfügbar</span>
-        </button>
+        {googleWalletActive ? (
+          <a
+            href={`/api/wallet/google?serial=${params.serial}`}
+            className="btn w-full flex-col gap-1"
+            style={{ background: "#fff", color: "#111" }}
+          >
+            <span>Zu Google Wallet hinzufügen</span>
+          </a>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="btn w-full flex-col gap-1 disabled:cursor-not-allowed"
+            style={{ background: "#fff", color: "#111", opacity: 0.6 }}
+          >
+            <span>Zu Google Wallet hinzufügen</span>
+            <span className="text-[10px] uppercase tracking-wide bg-black/10 px-2 py-0.5 rounded-full">Bald verfügbar</span>
+          </button>
+        )}
         <p className="text-xs text-faint text-center">
           Karte scannen zum Sammeln · matei.systems
         </p>
