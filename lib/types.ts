@@ -25,3 +25,12 @@ export interface Card {
   status: string;
   created_at: string;
 }
+
+export interface Customer {
+  id: string;
+  org_id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  created_at: string;
+}
