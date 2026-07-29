@@ -18,11 +18,11 @@ export default async function CustomersPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight mb-1">Kunden</h1>
-      <p className="text-neutral-400 text-sm mb-6">Alle Endkunden deines Betriebs</p>
-      <div className="card overflow-hidden">
+      <p className="text-[#A6A099] text-sm mb-6">Alle Endkunden deines Betriebs</p>
+      <div className="card overflow-hidden overflow-x-auto enter">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-neutral-500 text-xs uppercase">
+            <tr className="text-left text-[#6E685F] text-xs uppercase">
               <th className="p-3">Name</th>
               <th className="p-3">E-Mail</th>
               <th className="p-3">Seit</th>
@@ -30,16 +30,16 @@ export default async function CustomersPage() {
           </thead>
           <tbody>
             {(customers ?? []).map((c: any) => (
-              <tr key={c.id} className="border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+              <tr key={c.id} className="border-t border-white/[0.06] hover:bg-white/[0.02] transition-colors">
                 <td className="p-3 font-medium">{c.full_name ?? "—"}</td>
-                <td className="p-3 text-neutral-400">{c.email ?? "—"}</td>
-                <td className="p-3 text-neutral-400">
+                <td className="p-3 text-[#A6A099]">{c.email ?? "—"}</td>
+                <td className="p-3 text-[#A6A099]">
                   {new Date(c.created_at).toLocaleDateString("de-AT")}
                 </td>
               </tr>
             ))}
             {(!customers || customers.length === 0) && (
-              <tr><td className="p-3 text-neutral-500" colSpan={3}>Noch keine Kunden.</td></tr>
+              <tr><td className="p-3 text-[#6E685F]" colSpan={3}>Noch keine Kunden.</td></tr>
             )}
           </tbody>
         </table>

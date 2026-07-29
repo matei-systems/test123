@@ -35,7 +35,7 @@ export default async function ProgramDetail({
 
   return (
     <div>
-      <Link href="/dashboard/programs" className="text-sm text-neutral-400 hover:text-white">
+      <Link href="/dashboard/programs" className="text-sm text-[#A6A099] hover:text-gold-bright transition-colors">
         ← Programme
       </Link>
 
@@ -46,14 +46,14 @@ export default async function ProgramDetail({
         </div>
       )}
 
-      <div className="flex items-center gap-3 mt-3 mb-6">
-        <div className="w-11 h-11 rounded-xl grid place-items-center font-extrabold text-white"
+      <div className="flex items-center gap-3 mt-3 mb-6 enter">
+        <div className="w-11 h-11 rounded-xl grid place-items-center font-extrabold text-white shrink-0"
              style={{ background: themeGradient(program.design?.theme ?? 0) }}>
           {program.design?.logo ?? "C"}
         </div>
         <div>
           <h1 className="text-xl font-bold tracking-tight">{program.title}</h1>
-          <div className="text-sm text-neutral-400">
+          <div className="text-sm text-[#A6A099]">
             {isStamp
               ? `${program.stamps_required} Stempel → ${program.reward_description}`
               : `${program.points_per_reward} Punkte → ${program.reward_description}`}
@@ -62,8 +62,8 @@ export default async function ProgramDetail({
       </div>
 
       {/* Neue Karte ausgeben */}
-      <form action={issueCard} className="card p-5 mb-8">
-        <div className="font-semibold text-sm text-neutral-300 mb-3">Karte an Kunden ausgeben</div>
+      <form action={issueCard} className="card p-5 mb-8 enter" style={{ animationDelay: "60ms" }}>
+        <div className="font-semibold text-sm text-[#F4F1EC] mb-3">Karte an Kunden ausgeben</div>
         <input type="hidden" name="orgId" value={org.id} />
         <input type="hidden" name="programId" value={program.id} />
         <div className="grid gap-3 md:grid-cols-3">
@@ -74,26 +74,30 @@ export default async function ProgramDetail({
       </form>
 
       {/* Ausgegebene Karten */}
-      <div className="font-semibold text-sm text-neutral-300 mb-3">
+      <div className="font-semibold text-sm text-[#F4F1EC] mb-3">
         Karten ({cards?.length ?? 0})
       </div>
       <div className="space-y-3">
-        {(cards ?? []).map((c: any) => {
+        {(cards ?? []).map((c: any, i: number) => {
           const ready = isStamp
             ? c.stamps >= program.stamps_required
             : c.points >= program.points_per_reward;
           return (
-            <div key={c.id} className="card p-4 flex flex-wrap items-center gap-4 justify-between">
-              <div>
+            <div
+              key={c.id}
+              className="card card-hover p-4 flex flex-wrap items-center gap-4 justify-between enter"
+              style={{ animationDelay: `${120 + i * 40}ms` }}
+            >
+              <div className="min-w-0">
                 <div className="font-medium text-sm">{c.customers?.full_name ?? "Kunde"}</div>
-                <div className="text-xs text-neutral-400">
+                <div className="text-xs text-[#A6A099]">
                   {isStamp
                     ? `${c.stamps} / ${program.stamps_required} Stempel`
                     : `${c.points} / ${program.points_per_reward} Punkte`}
                   {ready && <span className="ml-2 text-emerald-400">· Belohnung frei</span>}
                 </div>
                 <Link href={`/c/${c.serial_number}`} target="_blank"
-                      className="text-xs text-[#9D7BFF] hover:underline">
+                      className="text-xs text-gold hover:text-gold-bright hover:underline">
                   Kundenkarte öffnen ↗
                 </Link>
               </div>
@@ -123,7 +127,7 @@ export default async function ProgramDetail({
           );
         })}
         {(!cards || cards.length === 0) && (
-          <div className="text-neutral-500 text-sm">Noch keine Karten ausgegeben.</div>
+          <div className="text-[#6E685F] text-sm">Noch keine Karten ausgegeben.</div>
         )}
       </div>
     </div>

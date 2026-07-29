@@ -25,7 +25,7 @@ export default async function ProgramsPage({
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight mb-1">Programme</h1>
-      <p className="text-neutral-400 text-sm mb-6">Deine digitalen Treuekarten</p>
+      <p className="text-[#A6A099] text-sm mb-6">Deine digitalen Treuekarten</p>
 
       {searchParams?.error && (
         <div className="mb-6 text-sm rounded-lg px-3 py-2"
@@ -35,8 +35,8 @@ export default async function ProgramsPage({
       )}
 
       {/* Neues Programm */}
-      <form action={createProgram} className="card p-6 mb-8 space-y-4">
-        <div className="font-semibold text-sm text-neutral-300">Neues Programm</div>
+      <form action={createProgram} className="card p-6 mb-8 space-y-4 enter">
+        <div className="font-semibold text-sm text-[#F4F1EC]">Neues Programm</div>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="label">Programmname (intern)</label>
@@ -83,8 +83,11 @@ export default async function ProgramsPage({
             {THEMES.map((t, i) => (
               <label key={i} className="cursor-pointer">
                 <input type="radio" name="theme" value={i} defaultChecked={i === 0} className="peer sr-only" />
-                <span className="block w-9 h-9 rounded-lg peer-checked:ring-2 peer-checked:ring-white"
-                      style={{ background: themeGradient(i) }} title={t.name} />
+                <span
+                  className="block w-9 h-9 rounded-lg peer-checked:ring-2 peer-checked:ring-gold peer-checked:ring-offset-2 peer-checked:ring-offset-[#16131A] transition-transform hover:scale-105"
+                  style={{ background: themeGradient(i) }}
+                  title={t.name}
+                />
               </label>
             ))}
           </div>
@@ -95,26 +98,32 @@ export default async function ProgramsPage({
 
       {/* Liste */}
       <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))" }}>
-        {(programs ?? []).map((p: any) => (
-          <Link key={p.id} href={`/dashboard/programs/${p.id}`}
-                className="card p-4 hover:border-white/20 transition-colors block">
+        {(programs ?? []).map((p: any, i: number) => (
+          <Link
+            key={p.id}
+            href={`/dashboard/programs/${p.id}`}
+            className="card card-hover p-4 block enter"
+            style={{ animationDelay: `${i * 50}ms` }}
+          >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg grid place-items-center font-extrabold text-white"
-                   style={{ background: themeGradient(p.design?.theme ?? 0) }}>
+              <div
+                className="w-10 h-10 rounded-lg grid place-items-center font-extrabold text-white shrink-0"
+                style={{ background: themeGradient(p.design?.theme ?? 0) }}
+              >
                 {p.design?.logo ?? "C"}
               </div>
-              <div>
-                <div className="font-semibold text-sm">{p.title}</div>
-                <div className="text-xs text-neutral-400">
+              <div className="min-w-0">
+                <div className="font-semibold text-sm truncate">{p.title}</div>
+                <div className="text-xs text-[#A6A099] truncate">
                   {p.name} · {p.type === "stamp" ? "Stempelkarte" : "Punktekarte"}
                 </div>
               </div>
             </div>
-            <div className="text-xs text-neutral-400 mt-3">Belohnung: {p.reward_description}</div>
+            <div className="text-xs text-[#A6A099] mt-3">Belohnung: {p.reward_description}</div>
           </Link>
         ))}
         {(!programs || programs.length === 0) && (
-          <div className="text-neutral-500 text-sm">Noch keine Programme. Leg oben dein erstes an.</div>
+          <div className="text-[#6E685F] text-sm">Noch keine Programme. Leg oben dein erstes an.</div>
         )}
       </div>
     </div>

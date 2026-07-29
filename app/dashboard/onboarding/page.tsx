@@ -8,9 +8,9 @@ export default function OnboardingPage({
   searchParams: { error?: string };
 }) {
   return (
-    <div className="max-w-md">
+    <div className="max-w-md enter">
       <h1 className="text-2xl font-bold tracking-tight mb-1">Betrieb anlegen</h1>
-      <p className="text-neutral-400 text-sm mb-6">
+      <p className="text-[#A6A099] text-sm mb-6">
         Wie heißt dein Unternehmen? Das erscheint auf den Treuekarten deiner Kunden.
       </p>
       {searchParams?.error && (
