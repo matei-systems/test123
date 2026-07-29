@@ -41,15 +41,25 @@ export default async function PublicCard({ params }: { params: { serial: string 
         qrDataUrl={qr}
       />
       <div className="flex flex-col gap-3 w-[340px] max-w-full">
-        <a href={`/api/wallet/apple?serial=${params.serial}`}
-           className="btn w-full" style={{ background: "#000", color: "#fff", border: "1px solid #333" }}>
-           Zu Apple Wallet hinzufügen
-        </a>
-        <a href={`/api/wallet/google?serial=${params.serial}`}
-           className="btn w-full" style={{ background: "#fff", color: "#111" }}>
-           Zu Google Wallet hinzufügen
-        </a>
-        <p className="text-xs text-neutral-500 text-center">
+        <button
+          type="button"
+          disabled
+          className="btn w-full flex-col gap-1 disabled:cursor-not-allowed"
+          style={{ background: "#000", color: "#fff", border: "1px solid #333", opacity: 0.6 }}
+        >
+          <span>Zu Apple Wallet hinzufügen</span>
+          <span className="text-[10px] uppercase tracking-wide bg-white/15 px-2 py-0.5 rounded-full">Bald verfügbar</span>
+        </button>
+        <button
+          type="button"
+          disabled
+          className="btn w-full flex-col gap-1 disabled:cursor-not-allowed"
+          style={{ background: "#fff", color: "#111", opacity: 0.6 }}
+        >
+          <span>Zu Google Wallet hinzufügen</span>
+          <span className="text-[10px] uppercase tracking-wide bg-black/10 px-2 py-0.5 rounded-full">Bald verfügbar</span>
+        </button>
+        <p className="text-xs text-faint text-center">
           Karte scannen zum Sammeln · matei.systems
         </p>
       </div>

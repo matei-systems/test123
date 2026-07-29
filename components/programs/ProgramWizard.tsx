@@ -250,7 +250,7 @@ export default function ProgramWizard({
 
         {/* Navigation */}
         <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/[0.06]">
-          <button type="button" onClick={back} disabled={step === 0} className="btn btn-ghost text-sm disabled:opacity-30">
+          <button type="button" onClick={back} disabled={step === 0} className="btn btn-ghost text-sm">
             Zurück
           </button>
           {step < STEPS.length - 1 ? (

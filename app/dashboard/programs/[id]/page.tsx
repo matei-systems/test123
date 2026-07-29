@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { issueCard, addStamp, addPoints, redeem } from "../actions";
 import { themeGradient } from "@/lib/themes";
 import DeleteProgramButton from "@/components/programs/DeleteProgramButton";
+import SubmitButton from "@/components/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -86,7 +87,7 @@ export default async function ProgramDetail({
         <div className="grid gap-3 md:grid-cols-3">
           <input className="input" name="full_name" required placeholder="Name des Kunden" />
           <input className="input" name="email" type="email" placeholder="E-Mail (optional)" />
-          <button className="btn btn-primary">Karte erstellen</button>
+          <SubmitButton pendingText="Wird erstellt…">Karte erstellen</SubmitButton>
         </div>
       </form>
 
@@ -123,21 +124,25 @@ export default async function ProgramDetail({
                   <form action={addStamp}>
                     <input type="hidden" name="cardId" value={c.id} />
                     <input type="hidden" name="programId" value={program.id} />
-                    <button className="btn btn-primary text-sm">+ Stempel</button>
+                    <SubmitButton pendingText="…" className="btn btn-primary text-sm">
+                      + Stempel
+                    </SubmitButton>
                   </form>
                 ) : (
                   <form action={addPoints}>
                     <input type="hidden" name="cardId" value={c.id} />
                     <input type="hidden" name="programId" value={program.id} />
-                    <button className="btn btn-primary text-sm">+ 10 Punkte</button>
+                    <SubmitButton pendingText="…" className="btn btn-primary text-sm">
+                      + 10 Punkte
+                    </SubmitButton>
                   </form>
                 )}
                 <form action={redeem}>
                   <input type="hidden" name="cardId" value={c.id} />
                   <input type="hidden" name="programId" value={program.id} />
-                  <button className="btn btn-ghost text-sm" disabled={!ready}>
+                  <SubmitButton pendingText="…" className="btn btn-ghost text-sm" disabled={!ready}>
                     Einlösen
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
             </div>

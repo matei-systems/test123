@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import SubmitButton from "@/components/SubmitButton";
 
 const LINKS = [
   { href: "/dashboard", label: "Übersicht" },
@@ -56,6 +57,24 @@ export default function Sidebar({
 }) {
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
     <>
       {/* Mobile top bar */}
@@ -88,7 +107,9 @@ export default function Sidebar({
             <NavLinks onNavigate={() => setOpen(false)} />
             <div className="mt-auto pt-3">
               <form action={signOutAction}>
-                <button className="btn btn-ghost w-full text-sm">Abmelden</button>
+                <SubmitButton pendingText="Wird abgemeldet…" className="btn btn-ghost w-full text-sm">
+                  Abmelden
+                </SubmitButton>
               </form>
             </div>
           </aside>

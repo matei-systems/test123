@@ -1,4 +1,5 @@
 import { createOrg } from "./actions";
+import SubmitButton from "@/components/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,9 @@ export default function OnboardingPage({
           <label className="label">Name des Betriebs</label>
           <input className="input" name="name" required placeholder="z. B. Café Central" />
         </div>
-        <button className="btn btn-primary w-full">Weiter</button>
+        <SubmitButton pendingText="Wird angelegt…" className="btn btn-primary w-full">
+          Weiter
+        </SubmitButton>
       </form>
     </div>
   );

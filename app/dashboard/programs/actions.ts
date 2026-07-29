@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
+import { translateDbError } from "@/lib/db-errors";
 
 export interface ProgramInput {
   name: string;
@@ -28,6 +29,7 @@ function validate(input: ProgramInput): string | null {
 }
 
 function toRow(input: ProgramInput) {
+  const logo = input.logo.trim() || input.title.trim().slice(0, 1) || "C";
   return {
     name: input.name.trim(),
     title: input.title.trim(),
@@ -35,7 +37,7 @@ function toRow(input: ProgramInput) {
     stamps_required: input.stampsRequired,
     points_per_reward: input.pointsPerReward,
     reward_description: input.rewardDescription.trim(),
-    design: { theme: input.theme, logo: input.logo.toUpperCase().slice(0, 2), logoImage: input.logoImage },
+    design: { theme: input.theme, logo: logo.toUpperCase().slice(0, 2), logoImage: input.logoImage },
   };
 }
 
@@ -56,7 +58,7 @@ export async function createProgram(input: ProgramInput): Promise<{ error?: stri
     .select("id")
     .single();
 
-  if (error || !data) return { error: error?.message ?? "Programm konnte nicht gespeichert werden." };
+  if (error || !data) return { error: error ? translateDbError(error.message) : "Programm konnte nicht gespeichert werden." };
   revalidatePath("/dashboard/programs");
   return { id: data.id };
 }
@@ -76,7 +78,7 @@ export async function updateProgram(id: string, input: ProgramInput): Promise<{ 
     .eq("id", id)
     .eq("org_id", org.id);
 
-  if (error) return { error: error.message };
+  if (error) return { error: translateDbError(error.message) };
   revalidatePath("/dashboard/programs");
   revalidatePath(`/dashboard/programs/${id}`);
   return {};
@@ -90,7 +92,7 @@ export async function deleteProgram(id: string): Promise<{ error?: string }> {
   const supabase = createClient();
   const { error } = await supabase.from("loyalty_programs").delete().eq("id", id).eq("org_id", org.id);
 
-  if (error) return { error: error.message };
+  if (error) return { error: translateDbError(error.message) };
   revalidatePath("/dashboard/programs");
   return {};
 }
@@ -114,7 +116,7 @@ export async function issueCard(formData: FormData) {
   if (cErr || !cust) {
     redirect(
       `/dashboard/programs/${programId}?error=` +
-        encodeURIComponent(cErr?.message ?? "Kunde konnte nicht angelegt werden.")
+        encodeURIComponent(cErr ? translateDbError(cErr.message) : "Kunde konnte nicht angelegt werden.")
     );
   }
 
@@ -125,7 +127,7 @@ export async function issueCard(formData: FormData) {
   });
 
   if (cardErr) {
-    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(cardErr.message));
+    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(translateDbError(cardErr.message)));
   }
 
   revalidatePath(`/dashboard/programs/${programId}`);
@@ -145,7 +147,7 @@ export async function addStamp(formData: FormData) {
   if (fetchErr || !card) {
     redirect(
       `/dashboard/programs/${programId}?error=` +
-        encodeURIComponent(fetchErr?.message ?? "Karte nicht gefunden.")
+        encodeURIComponent(fetchErr ? translateDbError(fetchErr.message) : "Karte nicht gefunden.")
     );
   }
 
@@ -154,7 +156,7 @@ export async function addStamp(formData: FormData) {
 
   const { error: updErr } = await supabase.from("cards").update({ stamps: next }).eq("id", cardId);
   if (updErr) {
-    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(updErr.message));
+    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(translateDbError(updErr.message)));
   }
   await supabase.from("transactions").insert({
     org_id: (card as any).org_id,
@@ -179,7 +181,7 @@ export async function addPoints(formData: FormData) {
   if (fetchErr || !card) {
     redirect(
       `/dashboard/programs/${programId}?error=` +
-        encodeURIComponent(fetchErr?.message ?? "Karte nicht gefunden.")
+        encodeURIComponent(fetchErr ? translateDbError(fetchErr.message) : "Karte nicht gefunden.")
     );
   }
 
@@ -188,7 +190,7 @@ export async function addPoints(formData: FormData) {
     .update({ points: (card as any).points + 10 })
     .eq("id", cardId);
   if (updErr) {
-    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(updErr.message));
+    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(translateDbError(updErr.message)));
   }
   await supabase.from("transactions").insert({
     org_id: (card as any).org_id,
@@ -213,7 +215,7 @@ export async function redeem(formData: FormData) {
   if (fetchErr || !card) {
     redirect(
       `/dashboard/programs/${programId}?error=` +
-        encodeURIComponent(fetchErr?.message ?? "Karte nicht gefunden.")
+        encodeURIComponent(fetchErr ? translateDbError(fetchErr.message) : "Karte nicht gefunden.")
     );
   }
 
@@ -235,7 +237,7 @@ export async function redeem(formData: FormData) {
 
   const { error: updErr } = await supabase.from("cards").update(update).eq("id", cardId);
   if (updErr) {
-    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(updErr.message));
+    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(translateDbError(updErr.message)));
   }
   await supabase.from("reward_redemptions").insert({
     org_id: (card as any).org_id,
