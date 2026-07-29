@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import PublicWalletCard from "@/components/PublicWalletCard";
 import { isGoogleWalletConfigured } from "@/lib/google-wallet";
+import { isAppleWalletConfigured } from "@/lib/apple-wallet";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export default async function PublicCard({ params }: { params: { serial: string 
   });
 
   const googleWalletActive = isGoogleWalletConfigured();
+  const appleWalletActive = isAppleWalletConfigured();
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 gap-6">
@@ -42,15 +44,25 @@ export default async function PublicCard({ params }: { params: { serial: string 
         qrDataUrl={qr}
       />
       <div className="flex flex-col gap-3 w-[340px] max-w-full">
-        <button
-          type="button"
-          disabled
-          className="btn w-full flex-col gap-1 disabled:cursor-not-allowed"
-          style={{ background: "#000", color: "#fff", border: "1px solid #333", opacity: 0.6 }}
-        >
-          <span>Zu Apple Wallet hinzufügen</span>
-          <span className="text-[10px] uppercase tracking-wide bg-white/15 px-2 py-0.5 rounded-full">Bald verfügbar</span>
-        </button>
+        {appleWalletActive ? (
+          <a
+            href={`/api/wallet/apple?serial=${params.serial}`}
+            className="btn w-full flex-col gap-1"
+            style={{ background: "#000", color: "#fff", border: "1px solid #333" }}
+          >
+            <span>Zu Apple Wallet hinzufügen</span>
+          </a>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="btn w-full flex-col gap-1 disabled:cursor-not-allowed"
+            style={{ background: "#000", color: "#fff", border: "1px solid #333", opacity: 0.6 }}
+          >
+            <span>Zu Apple Wallet hinzufügen</span>
+            <span className="text-[10px] uppercase tracking-wide bg-white/15 px-2 py-0.5 rounded-full">Bald verfügbar</span>
+          </button>
+        )}
         {googleWalletActive ? (
           <a
             href={`/api/wallet/google?serial=${params.serial}`}

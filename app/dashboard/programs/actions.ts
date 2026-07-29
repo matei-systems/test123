@@ -7,6 +7,8 @@ import { requireOrgRole } from "@/lib/org";
 import { translateDbError } from "@/lib/db-errors";
 import { checkStampCooldown } from "@/lib/abuse-protection";
 import type { CardDesign } from "@/lib/card-design";
+import { upsertGoogleLoyaltyClass } from "@/lib/google-wallet";
+import { notifyWalletsOfCardUpdate, registerWalletObjectsForNewCard } from "@/lib/wallet-updates";
 
 export interface ProgramInput {
   name: string;
@@ -60,6 +62,7 @@ export async function createProgram(input: ProgramInput): Promise<{ error?: stri
     .single();
 
   if (error || !data) return { error: error ? translateDbError(error.message) : "Programm konnte nicht gespeichert werden." };
+  await upsertGoogleLoyaltyClass({ programId: data.id, orgName: org.name, programTitle: input.title }).catch(() => {});
   revalidatePath("/dashboard/programs");
   return { id: data.id };
 }
@@ -81,6 +84,7 @@ export async function updateProgram(id: string, input: ProgramInput): Promise<{ 
     .eq("org_id", org.id);
 
   if (error) return { error: translateDbError(error.message) };
+  await upsertGoogleLoyaltyClass({ programId: id, orgName: org.name, programTitle: input.title }).catch(() => {});
   revalidatePath("/dashboard/programs");
   revalidatePath(`/dashboard/programs/${id}`);
   return {};
@@ -127,16 +131,24 @@ export async function issueCard(formData: FormData) {
     );
   }
 
-  const { error: cardErr } = await supabase.from("cards").insert({
-    org_id: orgId,
-    program_id: programId,
-    customer_id: cust.id,
-  });
+  const { data: newCard, error: cardErr } = await supabase
+    .from("cards")
+    .insert({
+      org_id: orgId,
+      program_id: programId,
+      customer_id: cust.id,
+    })
+    .select("id")
+    .single();
 
-  if (cardErr) {
-    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(translateDbError(cardErr.message)));
+  if (cardErr || !newCard) {
+    redirect(
+      `/dashboard/programs/${programId}?error=` +
+        encodeURIComponent(cardErr ? translateDbError(cardErr.message) : "Karte konnte nicht ausgegeben werden.")
+    );
   }
 
+  await registerWalletObjectsForNewCard(newCard.id).catch(() => {});
   revalidatePath(`/dashboard/programs/${programId}`);
 }
 
@@ -182,6 +194,7 @@ export async function addStamp(formData: FormData) {
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
+  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath(`/dashboard/programs/${programId}`);
 }
 
@@ -222,6 +235,7 @@ export async function addPoints(formData: FormData) {
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
+  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath(`/dashboard/programs/${programId}`);
 }
 
@@ -280,5 +294,6 @@ export async function redeem(formData: FormData) {
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
+  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath(`/dashboard/programs/${programId}`);
 }

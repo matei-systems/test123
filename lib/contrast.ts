@@ -10,6 +10,12 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
 }
 
+// Apple Wallet verlangt Farben im Format "rgb(r, g, b)" statt Hex.
+export function hexToRgbString(hex: string): string {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 // WCAG relative luminance (0 = schwarz, 1 = weiß).
 export function relativeLuminance(hex: string): number {
   const [r, g, b] = hexToRgb(hex).map((c) => {

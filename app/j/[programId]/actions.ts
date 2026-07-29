@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { translateDbError } from "@/lib/db-errors";
+import { registerWalletObjectsForNewCard } from "@/lib/wallet-updates";
 
 export interface JoinResult {
   error?: string;
@@ -65,9 +66,10 @@ export async function joinProgram(
   const { data: card, error: cardErr } = await admin
     .from("cards")
     .insert({ org_id: program.org_id, program_id: programId, customer_id: customer.id })
-    .select("serial_number")
+    .select("id, serial_number")
     .single();
   if (cardErr || !card) return { error: translateDbError(cardErr?.message) };
 
+  await registerWalletObjectsForNewCard(card.id).catch(() => {});
   return { serial: card.serial_number };
 }

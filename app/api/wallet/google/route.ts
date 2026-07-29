@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveDesign } from "@/lib/card-design";
-import { buildGoogleWalletSaveUrl, isGoogleWalletConfigured } from "@/lib/google-wallet";
+import { resolveDesign, themeColorHex } from "@/lib/card-design";
+import { buildGoogleWalletSaveUrl, upsertGoogleLoyaltyObject, isGoogleWalletConfigured } from "@/lib/google-wallet";
 
 // Google Wallet: Klasse + Objekt werden inline im signierten JWT mitgeschickt,
 // daher genügt hier ein Redirect auf https://pay.google.com/gp/v/save/<jwt>.
@@ -32,25 +32,27 @@ export async function GET(request: NextRequest) {
 
   const p = (card as any).loyalty_programs;
   const design = resolveDesign(p.design);
-  const themeColorHex =
-    design.backgroundMode === "color"
-      ? design.solidColor
-      : design.backgroundMode === "image"
-      ? "#241a0c" // Google Wallet erlaubt nur eine Volltonfarbe, kein Bild - dunkle Marken-Fallback-Farbe
-      : design.gradientFrom;
+  const orgName = (card as any).organizations?.name ?? p.title ?? "Matei Loyalty";
 
-  const saveUrl = buildGoogleWalletSaveUrl({
-    serial: (card as any).serial_number,
-    orgName: (card as any).organizations?.name ?? p.title ?? "Matei Loyalty",
-    programTitle: p.title ?? "Treuekarte",
+  const objectInput = {
+    programId: p.id as string,
+    serial: (card as any).serial_number as string,
+    orgName,
     rewardDescription: p.reward_description ?? "",
-    type: p.type,
-    stamps: (card as any).stamps,
-    stampsRequired: p.stamps_required,
-    points: (card as any).points,
-    pointsPerReward: p.points_per_reward,
-    themeColorHex,
-  });
+    type: p.type as "stamp" | "points",
+    stamps: (card as any).stamps as number,
+    stampsRequired: p.stamps_required as number,
+    points: (card as any).points as number,
+    pointsPerReward: p.points_per_reward as number,
+    themeColorHex: themeColorHex(design),
+  };
+
+  // Objekt proaktiv anlegen/aktualisieren, damit es beim Speichern bereits
+  // existiert (relevant falls die Karte vorher noch nie ausgegeben/upserted
+  // wurde) - Fehler hier dürfen den Save-Link nicht verhindern.
+  await upsertGoogleLoyaltyObject(objectInput).catch(() => {});
+
+  const saveUrl = buildGoogleWalletSaveUrl(objectInput);
 
   if (!saveUrl) {
     return NextResponse.json(

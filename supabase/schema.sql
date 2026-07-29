@@ -506,3 +506,31 @@ create policy redeem_insert on reward_redemptions for insert with check (is_org_
 insert into storage.buckets (id, name, public)
 values ('card-assets', 'card-assets', true)
 on conflict (id) do nothing;
+
+-- ============================================================================
+--  P9: Google Wallet & Apple Wallet
+--  - apple_wallet_registrations: hält fest, welches Gerät für Push-Updates
+--    zu welcher Karte registriert ist (Apples PassKit-Webservice-Protokoll).
+--    Wird ausschließlich von den /api/wallet/apple/v1/* Endpunkten über den
+--    Service-Role-Client geschrieben/gelesen - Apple-Geräte haben keine
+--    Supabase-Auth-Session, die Authentifizierung läuft stattdessen über den
+--    "Authorization: ApplePass <token>"-Header (siehe lib/apple-wallet.ts).
+--    RLS ist aktiviert und bekommt bewusst KEINE Policies: das sperrt anon/
+--    authenticated vollständig aus (Standard-Deny), nur der RLS-Bypass von
+--    service_role kommt durch - genau das ist hier gewünscht.
+-- ============================================================================
+create table if not exists apple_wallet_registrations (
+  id                      uuid primary key default gen_random_uuid(),
+  device_library_id       text not null,
+  push_token              text not null,
+  pass_type_identifier    text not null,
+  serial_number           text not null references cards(serial_number) on delete cascade,
+  org_id                  uuid not null references organizations(id) on delete cascade,
+  created_at              timestamptz not null default now(),
+  unique (device_library_id, pass_type_identifier, serial_number)
+);
+
+create index if not exists idx_apple_reg_device on apple_wallet_registrations(device_library_id, pass_type_identifier);
+create index if not exists idx_apple_reg_serial on apple_wallet_registrations(serial_number);
+
+alter table apple_wallet_registrations enable row level security;

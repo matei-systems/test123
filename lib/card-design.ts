@@ -105,3 +105,12 @@ export function cardTextColor(d: CardDesign): string {
   if (d.backgroundMode === "color") return readableTextColor(d.solidColor);
   return readableTextColorForGradient(d.gradientFrom, d.gradientTo);
 }
+
+// Google/Apple Wallet erlauben nur eine einzelne Volltonfarbe fürs
+// Kartendesign, kein Bild und keinen Verlauf - diese Funktion wählt eine
+// sinnvolle Repräsentativfarbe für beide Wallet-Integrationen.
+export function themeColorHex(d: CardDesign): string {
+  if (d.backgroundMode === "color") return d.solidColor;
+  if (d.backgroundMode === "image") return "#241a0c"; // dunkle Marken-Fallback-Farbe, da kein Bild möglich
+  return d.gradientFrom;
+}

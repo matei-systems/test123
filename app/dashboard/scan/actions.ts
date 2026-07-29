@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { translateDbError } from "@/lib/db-errors";
 import { checkStampCooldown } from "@/lib/abuse-protection";
 import { requireOrgRole } from "@/lib/org";
+import { notifyWalletsOfCardUpdate } from "@/lib/wallet-updates";
 
 export interface ScannedCard {
   id: string;
@@ -107,6 +108,7 @@ export async function scanStamp(cardId: string): Promise<{ error?: string; card?
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
+  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath("/dashboard");
   return loadCard(cardId);
 }
@@ -130,6 +132,7 @@ export async function scanAddPoints(cardId: string): Promise<{ error?: string; c
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
+  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath("/dashboard");
   return loadCard(cardId);
 }
@@ -164,6 +167,7 @@ export async function scanRedeem(cardId: string): Promise<{ error?: string; card
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
+  await notifyWalletsOfCardUpdate(cardId).catch(() => {});
   revalidatePath("/dashboard");
   return loadCard(cardId);
 }

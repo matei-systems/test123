@@ -14,10 +14,111 @@ export function isGoogleWalletConfigured(): boolean {
   );
 }
 
-export interface GoogleWalletCardInput {
-  serial: string;
+function privateKey(): string {
+  return (process.env.GOOGLE_WALLET_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
+}
+
+// Jedes Programm bekommt seine eigene Klasse (nicht eine gemeinsame für alle
+// Betriebe!) - issuerName/programName unterscheiden sich pro Organisation,
+// eine geteilte Klasse würde fremde Betriebe im selben Google-Wallet-Objekt
+// vermischen. UUIDs dürfen laut Google-Format keine Bindestriche enthalten.
+export function googleClassId(programId: string): string {
+  return `${process.env.GOOGLE_WALLET_ISSUER_ID}.class_${programId.replace(/-/g, "")}`;
+}
+export function googleObjectId(serial: string): string {
+  return `${process.env.GOOGLE_WALLET_ISSUER_ID}.card_${serial}`;
+}
+
+// OAuth2 JWT-Bearer-Flow (RFC 7523): signiert ein kurzlebiges JWT mit dem
+// Service-Account-Schlüssel und tauscht es gegen ein Access Token für die
+// Wallet-API. Entspricht genau dem, was google-auth-library intern tut -
+// hier ohne zusätzliche Abhängigkeit, da jsonwebtoken schon vorhanden ist.
+async function getGoogleAccessToken(): Promise<string | null> {
+  if (!isGoogleWalletConfigured()) return null;
+  const now = Math.floor(Date.now() / 1000);
+  const assertion = jwt.sign(
+    {
+      iss: process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL,
+      scope: "https://www.googleapis.com/auth/wallet_object.issuer",
+      aud: "https://oauth2.googleapis.com/token",
+      iat: now,
+      exp: now + 3600,
+    },
+    privateKey(),
+    { algorithm: "RS256" }
+  );
+
+  try {
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion,
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) {
+      console.error("[google-wallet] OAuth2-Token-Tausch fehlgeschlagen:", res.status, (await res.text()).slice(0, 300));
+      return null;
+    }
+    const data = await res.json();
+    return data.access_token ?? null;
+  } catch (e: any) {
+    console.error("[google-wallet] OAuth2-Token-Tausch-Fehler:", e.message);
+    return null;
+  }
+}
+
+async function walletApiRequest(method: string, path: string, body?: unknown): Promise<{ ok: boolean; status: number }> {
+  const token = await getGoogleAccessToken();
+  if (!token) return { ok: false, status: 0 };
+  try {
+    const res = await fetch(`https://walletobjects.googleapis.com/walletobjects/v1/${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) {
+      console.error(`[google-wallet] ${method} ${path} fehlgeschlagen:`, res.status, (await res.text().catch(() => "")).slice(0, 300));
+    }
+    return { ok: res.ok, status: res.status };
+  } catch (e: any) {
+    console.error(`[google-wallet] ${method} ${path} Fehler:`, e.message);
+    return { ok: false, status: 0 };
+  }
+}
+
+export interface GoogleClassInput {
+  programId: string;
   orgName: string;
   programTitle: string;
+}
+
+// Legt die Klasse an (einmal pro Programm) oder aktualisiert sie, falls sie
+// schon existiert (z. B. weil der Betrieb den Anzeigenamen geändert hat).
+// Wird still (ohne zu werfen) übersprungen, solange nicht konfiguriert -
+// darf niemals das Speichern eines Programms blockieren oder verlangsamen.
+export async function upsertGoogleLoyaltyClass(input: GoogleClassInput): Promise<void> {
+  if (!isGoogleWalletConfigured()) return;
+  const id = googleClassId(input.programId);
+  const payload = {
+    id,
+    issuerName: input.orgName,
+    programName: input.programTitle,
+    reviewStatus: "UNDER_REVIEW",
+  };
+  const inserted = await walletApiRequest("POST", "loyaltyClass", payload);
+  if (!inserted.ok && inserted.status === 409) {
+    await walletApiRequest("PUT", `loyaltyClass/${id}`, payload);
+  }
+}
+
+export interface GoogleObjectInput {
+  programId: string;
+  serial: string;
+  orgName: string;
   rewardDescription: string;
   type: "stamp" | "points";
   stamps: number;
@@ -27,34 +128,14 @@ export interface GoogleWalletCardInput {
   themeColorHex: string;
 }
 
-// Baut den "Save to Google Wallet"-Link. Die Klassen-/Objekt-Definition wird
-// direkt im JWT mitgeschickt (Google legt sie beim Speichern selbst an) -
-// dafür ist keine separate API-Anfrage vorab nötig, nur ein signierter Link.
-// Format folgt Googles offizieller Wallet-API-Dokumentation.
-export function buildGoogleWalletSaveUrl(input: GoogleWalletCardInput): string | null {
-  if (!isGoogleWalletConfigured()) return null;
-
-  const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID!;
-  const serviceAccountEmail = process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL!;
-  const privateKey = process.env.GOOGLE_WALLET_PRIVATE_KEY!.replace(/\\n/g, "\n");
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-
-  const classId = `${issuerId}.matei_loyalty_class`;
-  const objectId = `${issuerId}.card_${input.serial}`;
+function loyaltyObjectPayload(input: GoogleObjectInput) {
   const isStamp = input.type === "stamp";
   const current = isStamp ? input.stamps : input.points;
   const target = isStamp ? input.stampsRequired : input.pointsPerReward;
-
-  const loyaltyClass = {
-    id: classId,
-    issuerName: input.orgName,
-    programName: input.programTitle,
-    reviewStatus: "UNDER_REVIEW",
-  };
-
-  const loyaltyObject = {
-    id: objectId,
-    classId,
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  return {
+    id: googleObjectId(input.serial),
+    classId: googleClassId(input.programId),
     state: "ACTIVE",
     accountName: input.orgName,
     loyaltyPoints: {
@@ -65,6 +146,50 @@ export function buildGoogleWalletSaveUrl(input: GoogleWalletCardInput): string |
     hexBackgroundColor: input.themeColorHex,
     textModulesData: [{ header: "Belohnung", body: input.rewardDescription }],
   };
+}
+
+// Legt das Objekt proaktiv an, sobald eine Karte ausgegeben wird - nicht erst
+// wenn der Kunde auf "Zu Google Wallet hinzufügen" klickt. So funktionieren
+// spätere PATCH-Updates (Stempel/Einlösung) auch dann, wenn die Karte noch
+// gar nicht im Wallet des Kunden gespeichert wurde.
+export async function upsertGoogleLoyaltyObject(input: GoogleObjectInput): Promise<void> {
+  if (!isGoogleWalletConfigured()) return;
+  const payload = loyaltyObjectPayload(input);
+  const inserted = await walletApiRequest("POST", "loyaltyObject", payload);
+  if (!inserted.ok && inserted.status === 409) {
+    await walletApiRequest("PUT", `loyaltyObject/${payload.id}`, payload);
+  }
+}
+
+// Schneller Punkte-Update nach einem Stempel/einer Einlösung - PATCH statt
+// vollständigem PUT, da sich nur loyaltyPoints ändert.
+export async function patchGoogleLoyaltyPoints(input: GoogleObjectInput): Promise<void> {
+  if (!isGoogleWalletConfigured()) return;
+  const isStamp = input.type === "stamp";
+  const current = isStamp ? input.stamps : input.points;
+  const target = isStamp ? input.stampsRequired : input.pointsPerReward;
+  await walletApiRequest("PATCH", `loyaltyObject/${googleObjectId(input.serial)}`, {
+    loyaltyPoints: { label: isStamp ? "Stempel" : "Punkte", balance: { string: `${current} / ${target}` } },
+  });
+}
+
+// Baut den "Save to Wallet"-Link. Klassen-/Objekt-Definition werden zusätzlich
+// inline im JWT mitgeschickt (Google verlangt das für den Save-Button so),
+// falls sie über obige Upserts aber schon existieren, verknüpft Google beim
+// Speichern einfach das bestehende (und damit aktuelle) Objekt.
+export function buildGoogleWalletSaveUrl(input: GoogleObjectInput): string | null {
+  if (!isGoogleWalletConfigured()) return null;
+
+  const serviceAccountEmail = process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL!;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+
+  const loyaltyClass = {
+    id: googleClassId(input.programId),
+    issuerName: input.orgName,
+    programName: input.orgName,
+    reviewStatus: "UNDER_REVIEW",
+  };
+  const loyaltyObject = loyaltyObjectPayload(input);
 
   const payload = {
     iss: serviceAccountEmail,
@@ -78,6 +203,6 @@ export function buildGoogleWalletSaveUrl(input: GoogleWalletCardInput): string |
     },
   };
 
-  const token = jwt.sign(payload, privateKey, { algorithm: "RS256" });
+  const token = jwt.sign(payload, privateKey(), { algorithm: "RS256" });
   return `https://pay.google.com/gp/v/save/${token}`;
 }
