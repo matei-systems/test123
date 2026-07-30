@@ -5,6 +5,8 @@ import fs from "fs";
 import path from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hexToRgbString } from "@/lib/contrast";
+import { renderWalletHero, downscalePng, renderContainedImage } from "@/lib/card-render";
+import { resolveDesign, type CardDesign } from "@/lib/card-design";
 
 // Apple Wallet braucht ein aktives Apple-Developer-Programm, eine Pass-Type-ID
 // mit zugehörigem Zertifikat sowie das Apple-WWDR-Zwischenzertifikat - das
@@ -49,6 +51,38 @@ export interface ApplePassInput {
   pointsPerReward: number;
   backgroundColorHex: string;
   foregroundColorHex: string;
+  design: CardDesign | Record<string, any>;
+}
+
+// Rendert icon.png/@2x/@3x (Pflichtfeld, u.a. für Sperrbildschirm/Push-
+// Benachrichtigungen) sowie logo.png/@2x/@3x (sichtbar oben auf der Karte)
+// aus dem hochgeladenen Firmenlogo. Ohne eigenes Logo bleibt der bewährte
+// statische Matei-Fallback bzw. der reine Text-Header (logoText) erhalten -
+// niemals ein hartes Fehlschlagen der Pass-Erstellung wegen eines fehlenden
+// oder nicht ladbaren Kundenlogos.
+async function buildLogoAssets(logoImage: string | null): Promise<Record<string, Buffer>> {
+  const files: Record<string, Buffer> = {
+    "icon.png": fs.readFileSync(path.join(ICON_DIR, "icon.png")),
+    "icon@2x.png": fs.readFileSync(path.join(ICON_DIR, "icon@2x.png")),
+    "icon@3x.png": fs.readFileSync(path.join(ICON_DIR, "icon@3x.png")),
+  };
+  if (!logoImage) return files;
+
+  const [icon1, icon2, icon3, logo1, logo2, logo3] = await Promise.all([
+    renderContainedImage(logoImage, 29, 29, 0.06),
+    renderContainedImage(logoImage, 58, 58, 0.06),
+    renderContainedImage(logoImage, 87, 87, 0.06),
+    renderContainedImage(logoImage, 120, 36, 0.04),
+    renderContainedImage(logoImage, 240, 72, 0.04),
+    renderContainedImage(logoImage, 360, 108, 0.04),
+  ]);
+  if (icon1) files["icon.png"] = icon1;
+  if (icon2) files["icon@2x.png"] = icon2;
+  if (icon3) files["icon@3x.png"] = icon3;
+  if (logo1) files["logo.png"] = logo1;
+  if (logo2) files["logo@2x.png"] = logo2;
+  if (logo3) files["logo@3x.png"] = logo3;
+  return files;
 }
 
 // Baut die .pkpass-Datei (ZIP aus pass.json, manifest.json und PKCS#7-
@@ -60,13 +94,33 @@ export async function buildApplePass(input: ApplePassInput): Promise<Buffer | nu
   const isStamp = input.type === "stamp";
   const current = isStamp ? input.stamps : input.points;
   const target = isStamp ? input.stampsRequired : input.pointsPerReward;
+  const remaining = Math.max(0, target - current);
+  const design = resolveDesign(input.design);
 
   try {
+    const [logoFiles, heroMaster] = await Promise.all([
+      buildLogoAssets(design.logoImage),
+      renderWalletHero({
+        design,
+        type: input.type,
+        stamps: input.stamps,
+        stampsRequired: input.stampsRequired,
+        points: input.points,
+        pointsPerReward: input.pointsPerReward,
+      }),
+    ]);
+    const [strip3x, strip2x, strip1x] = await Promise.all([
+      Promise.resolve(heroMaster),
+      downscalePng(heroMaster, 750, 246),
+      downscalePng(heroMaster, 375, 123),
+    ]);
+
     const pass = new PKPass(
       {
-        "icon.png": fs.readFileSync(path.join(ICON_DIR, "icon.png")),
-        "icon@2x.png": fs.readFileSync(path.join(ICON_DIR, "icon@2x.png")),
-        "icon@3x.png": fs.readFileSync(path.join(ICON_DIR, "icon@3x.png")),
+        ...logoFiles,
+        "strip.png": strip1x,
+        "strip@2x.png": strip2x,
+        "strip@3x.png": strip3x,
       },
       {
         wwdr: pem("APPLE_WWDR_CERTIFICATE"),
@@ -96,6 +150,11 @@ export async function buildApplePass(input: ApplePassInput): Promise<Buffer | nu
       value: `${current} / ${target}`,
     });
     pass.secondaryFields.push({ key: "reward", label: "Belohnung", value: input.rewardDescription || "-" });
+    pass.auxiliaryFields.push({
+      key: "remaining",
+      label: "Bis zur Belohnung",
+      value: remaining > 0 ? `noch ${remaining}` : "jetzt einlösen!",
+    });
     pass.backFields.push(
       { key: "info", label: "Info", value: `Digitale Treuekarte von ${input.orgName}` },
       { key: "serial", label: "Karten-ID", value: input.serial.slice(0, 8).toUpperCase() }

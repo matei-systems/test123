@@ -24,8 +24,8 @@ function validate(input: ProgramInput): string | null {
   if (!input.name.trim()) return "Bitte gib einen internen Programmnamen an.";
   if (!input.title.trim()) return "Bitte gib einen Anzeigenamen für die Karte an.";
   if (!input.rewardDescription.trim()) return "Bitte beschreibe die Belohnung.";
-  if (input.type === "stamp" && (input.stampsRequired < 3 || input.stampsRequired > 20))
-    return "Stempel bis Belohnung muss zwischen 3 und 20 liegen.";
+  if (input.type === "stamp" && (input.stampsRequired < 3 || input.stampsRequired > 30))
+    return "Stempel bis Belohnung muss zwischen 3 und 30 liegen.";
   if (input.type === "points" && input.pointsPerReward < 10) return "Punkte bis Belohnung muss mindestens 10 sein.";
   return null;
 }
@@ -62,7 +62,7 @@ export async function createProgram(input: ProgramInput): Promise<{ error?: stri
     .single();
 
   if (error || !data) return { error: error ? translateDbError(error.message) : "Programm konnte nicht gespeichert werden." };
-  upsertGoogleLoyaltyClass({ programId: data.id, orgName: org.name, programTitle: input.title }).catch(() => {});
+  upsertGoogleLoyaltyClass({ programId: data.id, orgName: org.name, programTitle: input.title, logoUrl: input.design.logoImage }).catch(() => {});
   revalidatePath("/dashboard/programs");
   return { id: data.id };
 }
@@ -84,7 +84,7 @@ export async function updateProgram(id: string, input: ProgramInput): Promise<{ 
     .eq("org_id", org.id);
 
   if (error) return { error: translateDbError(error.message) };
-  upsertGoogleLoyaltyClass({ programId: id, orgName: org.name, programTitle: input.title }).catch(() => {});
+  upsertGoogleLoyaltyClass({ programId: id, orgName: org.name, programTitle: input.title, logoUrl: input.design.logoImage }).catch(() => {});
   revalidatePath("/dashboard/programs");
   revalidatePath(`/dashboard/programs/${id}`);
   return {};

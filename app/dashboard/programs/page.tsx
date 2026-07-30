@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentOrg } from "@/lib/org";
 import { hasMinRole } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
-import { resolveDesign, cardBackground, cardTextColor } from "@/lib/card-design";
+import { resolveDesign, cardBaseStyle, cardTextColor } from "@/lib/card-design";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +42,7 @@ export default async function ProgramsPage() {
               <div className="flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-lg grid place-items-center font-extrabold shrink-0 overflow-hidden"
-                  style={{ ...cardBackground(d).style, color: cardTextColor(d) }}
+                  style={{ ...cardBaseStyle(d), color: cardTextColor(d) }}
                 >
                   {d.logoImage ? (
                     // eslint-disable-next-line @next/next/no-img-element

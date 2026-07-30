@@ -5,7 +5,8 @@ import QRCode from "qrcode";
 import WalletCard from "@/components/WalletCard";
 import ImageUpload from "@/components/programs/ImageUpload";
 import { THEMES } from "@/lib/themes";
-import { DEFAULT_DESIGN, STAMP_ICONS, type CardDesign, type BackgroundMode, type CornerRadius } from "@/lib/card-design";
+import { DEFAULT_DESIGN, type CardDesign, type BaseMode, type CornerRadius } from "@/lib/card-design";
+import { STAMP_ICON_PRESETS } from "@/lib/stamp-icons";
 import { createProgram, updateProgram, type ProgramInput } from "@/app/dashboard/programs/actions";
 
 const STEPS = ["Grundlagen", "Design", "Belohnung", "Überprüfen"];
@@ -87,7 +88,7 @@ function Slider({
   );
 }
 
-const BG_MODE_LABEL: Record<BackgroundMode, string> = { gradient: "Verlauf", color: "Farbe", image: "Bild" };
+const BASE_MODE_LABEL: Record<BaseMode, string> = { gradient: "Verlauf", color: "Farbe" };
 const RADIUS_LABEL: Record<CornerRadius, string> = { lg: "Dezent", xl: "Mittel", "2xl": "Rund" };
 
 export default function ProgramWizard({
@@ -238,9 +239,10 @@ export default function ProgramWizard({
                 label="Stempel bis Belohnung"
                 type="number"
                 min={3}
-                max={20}
+                max={30}
                 value={input.stampsRequired}
                 onChange={(e) => set("stampsRequired", Number(e.target.value) || 10)}
+                hint="Frei wählbar von 3 bis 30 - z. B. 5 für schnelle Rewards, 10 klassisch, 20 für hochpreisige Belohnungen."
               />
             ) : (
               <Field
@@ -258,23 +260,26 @@ export default function ProgramWizard({
         {step === 1 && (
           <div className="space-y-7 enter">
             <div>
-              <label className="label">Hintergrund</label>
+              <label className="label">Basisfarbe</label>
+              <div className="text-xs text-faint mb-3">
+                Sichtbar in Kopf-/Fußbereich der Karte, und als Hintergrund, falls kein Bannerbild hinterlegt ist.
+              </div>
               <div className="inline-flex flex-wrap bg-ink border border-line rounded-xl p-1 gap-1 mb-4">
-                {(["gradient", "color", "image"] as BackgroundMode[]).map((m) => (
+                {(["gradient", "color"] as BaseMode[]).map((m) => (
                   <button
                     key={m}
                     type="button"
-                    onClick={() => setDesign("backgroundMode", m)}
+                    onClick={() => setDesign("baseMode", m)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      d.backgroundMode === m ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+                      d.baseMode === m ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
                     }`}
                   >
-                    {BG_MODE_LABEL[m]}
+                    {BASE_MODE_LABEL[m]}
                   </button>
                 ))}
               </div>
 
-              {d.backgroundMode === "gradient" && (
+              {d.baseMode === "gradient" && (
                 <div className="space-y-4">
                   <div>
                     <div className="text-xs text-faint mb-2">Schnellauswahl</div>
@@ -304,29 +309,34 @@ export default function ProgramWizard({
                 </div>
               )}
 
-              {d.backgroundMode === "color" && <ColorField label="Kartenfarbe" value={d.solidColor} onChange={(v) => setDesign("solidColor", v)} />}
+              {d.baseMode === "color" && <ColorField label="Kartenfarbe" value={d.solidColor} onChange={(v) => setDesign("solidColor", v)} />}
+            </div>
 
-              {d.backgroundMode === "image" && (
-                <div className="space-y-4">
-                  <ImageUpload
-                    kind="background"
-                    aspect="wide"
-                    value={d.backgroundImage}
-                    onChange={(url, luminance) => {
-                      setDesign("backgroundImage", url);
-                      if (luminance !== undefined) setDesign("bgLuminance", luminance);
-                    }}
+            <div className="pt-2 border-t border-white/[0.06]">
+              <label className="label">Bannerbild</label>
+              <div className="text-xs text-faint mb-3">
+                Großes Foto in der Kartenmitte, auf dem die Stempel liegen - so wie bei den hochwertigsten Wallet-Karten am Markt.
+                Optional, aber empfohlen.
+              </div>
+              <ImageUpload
+                kind="banner"
+                aspect="wide"
+                value={d.bannerImage}
+                onChange={(url, luminance) => {
+                  setDesign("bannerImage", url);
+                  if (luminance !== undefined) setDesign("bannerLuminance", luminance);
+                }}
+              />
+              {d.bannerImage && (
+                <div className="mt-4">
+                  <Slider
+                    label="Bildausschnitt"
+                    value={d.bannerFocalY}
+                    min={0}
+                    max={100}
+                    onChange={(v) => setDesign("bannerFocalY", v)}
                   />
-                  {d.backgroundImage && (
-                    <Slider
-                      label="Bildausschnitt"
-                      value={d.backgroundPositionY}
-                      min={0}
-                      max={100}
-                      onChange={(v) => setDesign("backgroundPositionY", v)}
-                    />
-                  )}
-                  <div className="text-xs text-faint">
+                  <div className="text-xs text-faint mt-2">
                     Für gute Lesbarkeit wird automatisch ein dezenter Verlauf über das Bild gelegt.
                   </div>
                 </div>
@@ -379,22 +389,36 @@ export default function ProgramWizard({
             </div>
 
             {input.type === "stamp" && (
-              <div>
-                <label className="label">Stempel-Symbol</label>
-                <div className="flex gap-2 flex-wrap">
-                  {STAMP_ICONS.map((icon) => (
+              <div className="pt-2 border-t border-white/[0.06]">
+                <label className="label">Stempel-Icon</label>
+                <div className="text-xs text-faint mb-3">
+                  Erscheint groß auf jedem Stempel - passend zur Branche (Café, Friseur, Fitness, Beauty, …).
+                </div>
+                <div className="flex gap-2 flex-wrap mb-4">
+                  {STAMP_ICON_PRESETS.map((icon) => (
                     <button
-                      key={icon}
+                      key={icon.key}
                       type="button"
-                      onClick={() => setDesign("stampIcon", icon)}
-                      className={`w-10 h-10 rounded-lg grid place-items-center text-lg border transition-colors ${
-                        d.stampIcon === icon ? "border-gold bg-[rgba(232,181,115,0.12)]" : "border-line text-faint hover:text-[#F4F1EC]"
+                      onClick={() => {
+                        setDesign("stampIconKey", icon.key);
+                        setDesign("stampIconImage", null);
+                      }}
+                      title={icon.label}
+                      aria-label={icon.label}
+                      className={`w-10 h-10 rounded-lg grid place-items-center border transition-colors ${
+                        !d.stampIconImage && d.stampIconKey === icon.key
+                          ? "border-gold bg-[rgba(232,181,115,0.12)]"
+                          : "border-line text-faint hover:text-[#F4F1EC]"
                       }`}
                     >
-                      {icon}
+                      <svg viewBox="0 0 24 24" className="w-5 h-5">
+                        <path d={icon.path} fill="currentColor" />
+                      </svg>
                     </button>
                   ))}
                 </div>
+                <label className="label">Oder eigenes Icon hochladen</label>
+                <ImageUpload kind="icon" value={d.stampIconImage} onChange={(url) => setDesign("stampIconImage", url)} />
               </div>
             )}
 

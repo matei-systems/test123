@@ -94,12 +94,15 @@ export interface GoogleClassInput {
   programId: string;
   orgName: string;
   programTitle: string;
+  logoUrl?: string | null;
 }
 
 // Legt die Klasse an (einmal pro Programm) oder aktualisiert sie, falls sie
 // schon existiert (z. B. weil der Betrieb den Anzeigenamen geändert hat).
 // Wird still (ohne zu werfen) übersprungen, solange nicht konfiguriert -
 // darf niemals das Speichern eines Programms blockieren oder verlangsamen.
+// programLogo ist klassenweit (nicht pro Kunde) - Google zeigt es oben links
+// auf jeder Karte dieses Programms, sobald ein eigenes Logo hochgeladen wurde.
 export async function upsertGoogleLoyaltyClass(input: GoogleClassInput): Promise<void> {
   if (!isGoogleWalletConfigured()) return;
   const id = googleClassId(input.programId);
@@ -108,6 +111,9 @@ export async function upsertGoogleLoyaltyClass(input: GoogleClassInput): Promise
     issuerName: input.orgName,
     programName: input.programTitle,
     reviewStatus: "UNDER_REVIEW",
+    ...(input.logoUrl
+      ? { programLogo: { sourceUri: { uri: input.logoUrl }, contentDescription: { defaultValue: { language: "de", value: "Logo" } } } }
+      : {}),
   };
   const inserted = await walletApiRequest("POST", "loyaltyClass", payload);
   if (!inserted.ok && inserted.status === 409) {
@@ -126,12 +132,22 @@ export interface GoogleObjectInput {
   points: number;
   pointsPerReward: number;
   themeColorHex: string;
+  heroImageUrl?: string | null;
+  logoUrl?: string | null;
 }
 
+// heroImage ist das große Bannerbild samt überlagerten Stempel-Icons (siehe
+// lib/card-render.ts) - wird von lib/wallet-updates.ts bei jeder
+// Kartenänderung neu gerendert, in Supabase Storage hochgeladen und hier per
+// URL referenziert (Google lädt das Bild selbst nach, kein Datei-Upload über
+// diese API möglich). Die URL trägt einen Versions-Query-Parameter (siehe
+// wallet-updates.ts), damit Googles Bild-Cache nie eine veraltete Version
+// ausliefert.
 function loyaltyObjectPayload(input: GoogleObjectInput) {
   const isStamp = input.type === "stamp";
   const current = isStamp ? input.stamps : input.points;
   const target = isStamp ? input.stampsRequired : input.pointsPerReward;
+  const remaining = Math.max(0, target - current);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   return {
     id: googleObjectId(input.serial),
@@ -144,7 +160,16 @@ function loyaltyObjectPayload(input: GoogleObjectInput) {
     },
     barcode: { type: "QR_CODE", value: `${appUrl}/c/${input.serial}` },
     hexBackgroundColor: input.themeColorHex,
-    textModulesData: [{ header: "Belohnung", body: input.rewardDescription }],
+    ...(input.heroImageUrl
+      ? { heroImage: { sourceUri: { uri: input.heroImageUrl }, contentDescription: { defaultValue: { language: "de", value: "Treuekarte" } } } }
+      : {}),
+    textModulesData: [
+      { header: "Belohnung", body: input.rewardDescription },
+      {
+        header: "Fortschritt",
+        body: remaining > 0 ? `Noch ${remaining} bis zur Belohnung` : "Belohnung jetzt einlösbar!",
+      },
+    ],
   };
 }
 
@@ -161,15 +186,28 @@ export async function upsertGoogleLoyaltyObject(input: GoogleObjectInput): Promi
   }
 }
 
-// Schneller Punkte-Update nach einem Stempel/einer Einlösung - PATCH statt
-// vollständigem PUT, da sich nur loyaltyPoints ändert.
+// Schneller Update nach einem Stempel/einer Einlösung - PATCH statt
+// vollständigem PUT. Aktualisiert neben dem Punktestand auch das Hero-Bild
+// (neuer Stempel-Füllstand ist dort eingebrannt, siehe lib/card-render.ts)
+// und die "Noch X"-Restanzeige.
 export async function patchGoogleLoyaltyPoints(input: GoogleObjectInput): Promise<void> {
   if (!isGoogleWalletConfigured()) return;
   const isStamp = input.type === "stamp";
   const current = isStamp ? input.stamps : input.points;
   const target = isStamp ? input.stampsRequired : input.pointsPerReward;
+  const remaining = Math.max(0, target - current);
   await walletApiRequest("PATCH", `loyaltyObject/${googleObjectId(input.serial)}`, {
     loyaltyPoints: { label: isStamp ? "Stempel" : "Punkte", balance: { string: `${current} / ${target}` } },
+    ...(input.heroImageUrl
+      ? { heroImage: { sourceUri: { uri: input.heroImageUrl }, contentDescription: { defaultValue: { language: "de", value: "Treuekarte" } } } }
+      : {}),
+    textModulesData: [
+      { header: "Belohnung", body: input.rewardDescription },
+      {
+        header: "Fortschritt",
+        body: remaining > 0 ? `Noch ${remaining} bis zur Belohnung` : "Belohnung jetzt einlösbar!",
+      },
+    ],
   });
 }
 
@@ -188,6 +226,9 @@ export function buildGoogleWalletSaveUrl(input: GoogleObjectInput): string | nul
     issuerName: input.orgName,
     programName: input.orgName,
     reviewStatus: "UNDER_REVIEW",
+    ...(input.logoUrl
+      ? { programLogo: { sourceUri: { uri: input.logoUrl }, contentDescription: { defaultValue: { language: "de", value: "Logo" } } } }
+      : {}),
   };
   const loyaltyObject = loyaltyObjectPayload(input);
 

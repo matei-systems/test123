@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveDesign, cardBackground, cardTextColor } from "@/lib/card-design";
+import { resolveDesign, cardBaseStyle, cardTextColor } from "@/lib/card-design";
 import JoinForm from "@/components/join/JoinForm";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ export default async function JoinProgramPage({ params }: { params: { programId:
         <div className="flex items-center gap-3 mb-6 justify-center">
           <div
             className="w-14 h-14 rounded-2xl grid place-items-center font-extrabold text-lg shrink-0 overflow-hidden"
-            style={{ ...cardBackground(design).style, color: cardTextColor(design) }}
+            style={{ ...cardBaseStyle(design), color: cardTextColor(design) }}
           >
             {design.logoImage ? (
               // eslint-disable-next-line @next/next/no-img-element

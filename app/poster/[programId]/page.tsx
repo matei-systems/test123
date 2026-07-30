@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveDesign, cardBackground, cardTextColor } from "@/lib/card-design";
+import { resolveDesign, cardBaseStyle, cardTextColor } from "@/lib/card-design";
 import PrintButton from "@/components/join/PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export default async function PosterPage({ params }: { params: { programId: stri
 
   const p = program as any;
   const design = resolveDesign(p.design);
-  const { style: bgStyle, overlay } = cardBackground(design);
+  const bgStyle = cardBaseStyle(design);
   const textColor = cardTextColor(design);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const joinUrl = `${appUrl}/j/${p.id}`;
@@ -31,7 +31,6 @@ export default async function PosterPage({ params }: { params: { programId: stri
           className="relative rounded-3xl p-10 text-center print:rounded-none print:p-16 overflow-hidden"
           style={{ ...bgStyle, color: textColor }}
         >
-          {overlay && <div className="absolute inset-0 pointer-events-none" style={{ background: overlay }} />}
           <div className="relative">
             <div className="text-xs uppercase tracking-[3px] opacity-80 mb-3">Digitale Treuekarte</div>
             <h1 className="text-3xl font-extrabold tracking-tight mb-1">{p.title ?? p.organizations?.name}</h1>

@@ -5,14 +5,17 @@ import { uploadCardImage } from "@/app/dashboard/programs/upload-actions";
 
 const CONFIG = {
   logo: { maxDim: 320, mime: "image/png" as const, quality: undefined, label: "Logo" },
-  background: { maxDim: 1000, mime: "image/jpeg" as const, quality: 0.86, label: "Hintergrundbild" },
+  banner: { maxDim: 1400, mime: "image/jpeg" as const, quality: 0.88, label: "Bannerbild" },
+  icon: { maxDim: 400, mime: "image/png" as const, quality: undefined, label: "Eigenes Stempel-Icon" },
 };
 
 // Skaliert clientseitig auf eine sinnvolle Zielgröße, misst bei Hintergrund-
 // bildern zusätzlich die durchschnittliche Helligkeit (für den automatischen
 // Kontrast-Overlay, siehe lib/contrast.ts) und liefert beides zusammen mit
 // dem hochladefertigen Blob zurück - alles in einem Canvas-Durchlauf.
-function processImage(file: File, kind: "logo" | "background"): Promise<{ blob: Blob; luminance?: number }> {
+type UploadKind = "logo" | "banner" | "icon";
+
+function processImage(file: File, kind: UploadKind): Promise<{ blob: Blob; luminance?: number }> {
   const { maxDim, mime, quality } = CONFIG[kind];
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -32,7 +35,7 @@ function processImage(file: File, kind: "logo" | "background"): Promise<{ blob: 
         ctx.drawImage(img, 0, 0, w, h);
 
         let luminance: number | undefined;
-        if (kind === "background") {
+        if (kind === "banner") {
           const { data } = ctx.getImageData(0, 0, w, h);
           let sum = 0;
           const step = 4 * 37; // grobes Sampling reicht, spart Rechenzeit bei großen Bildern
@@ -70,7 +73,7 @@ export default function ImageUpload({
 }: {
   value: string | null;
   onChange: (url: string | null, luminance?: number) => void;
-  kind: "logo" | "background";
+  kind: UploadKind;
   aspect?: "square" | "wide";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);

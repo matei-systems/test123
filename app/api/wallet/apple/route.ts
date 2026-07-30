@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
     pointsPerReward: p.points_per_reward,
     backgroundColorHex: themeColorHex(design),
     foregroundColorHex: cardTextColor(design),
+    design,
   });
 
   if (!buffer) {

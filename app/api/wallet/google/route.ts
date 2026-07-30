@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveDesign, themeColorHex } from "@/lib/card-design";
 import { buildGoogleWalletSaveUrl, upsertGoogleLoyaltyObject, isGoogleWalletConfigured } from "@/lib/google-wallet";
+import { renderAndUploadHero } from "@/lib/wallet-updates";
 
 // Google Wallet: Klasse + Objekt werden inline im signierten JWT mitgeschickt,
 // daher genügt hier ein Redirect auf https://pay.google.com/gp/v/save/<jwt>.
@@ -38,6 +39,16 @@ export async function GET(request: NextRequest) {
   const design = resolveDesign(p.design);
   const orgName = (card as any).organizations?.name ?? p.title ?? "Matei Loyalty";
 
+  const heroImageUrl = await renderAndUploadHero(
+    (card as any).serial_number,
+    design,
+    p.type,
+    (card as any).stamps,
+    p.stamps_required,
+    (card as any).points,
+    p.points_per_reward
+  );
+
   const objectInput = {
     programId: p.id as string,
     serial: (card as any).serial_number as string,
@@ -49,6 +60,8 @@ export async function GET(request: NextRequest) {
     points: (card as any).points as number,
     pointsPerReward: p.points_per_reward as number,
     themeColorHex: themeColorHex(design),
+    heroImageUrl,
+    logoUrl: design.logoImage,
   };
 
   // Objekt proaktiv anlegen/aktualisieren, damit es beim Speichern bereits

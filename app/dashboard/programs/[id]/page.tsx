@@ -5,7 +5,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { hasMinRole } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { issueCard, addStamp, addPoints, redeem } from "../actions";
-import { resolveDesign, cardBackground, cardTextColor } from "@/lib/card-design";
+import { resolveDesign, cardBaseStyle, cardTextColor } from "@/lib/card-design";
 import DeleteProgramButton from "@/components/programs/DeleteProgramButton";
 import SubmitButton from "@/components/SubmitButton";
 
@@ -60,7 +60,7 @@ export default async function ProgramDetail({
         <div className="flex items-center gap-3">
           <div
             className="w-11 h-11 rounded-xl grid place-items-center font-extrabold shrink-0 overflow-hidden"
-            style={{ ...cardBackground(design).style, color: cardTextColor(design) }}
+            style={{ ...cardBaseStyle(design), color: cardTextColor(design) }}
           >
             {design.logoImage ? (
               // eslint-disable-next-line @next/next/no-img-element
