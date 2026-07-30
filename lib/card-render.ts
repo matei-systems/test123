@@ -1,6 +1,7 @@
 import { createCanvas, loadImage, Path2D, type SKRSContext2D, type Image } from "@napi-rs/canvas";
 import type { CardDesign } from "@/lib/card-design";
 import { stampIconPath } from "@/lib/stamp-icons";
+import { layoutStampGrid } from "@/lib/stamp-layout";
 
 // Rendert das Hero-/Bannerbild samt überlagerten Stempel-Icons serverseitig
 // zu einem fertigen PNG - das ist der einzige Weg, mit dem Apple Wallet und
@@ -100,21 +101,28 @@ interface StampCell {
   filled: boolean;
 }
 
+const STAMP_GRID_GAP = 14;
+const STAMP_MAX_CELL = 170;
+
+// Nutzt dieselbe Layout-Berechnung wie die Web-Karte (lib/stamp-layout.ts),
+// damit beide garantiert dieselbe, immer vollständig sichtbare Anordnung
+// zeigen - unabhängig von Stempelanzahl oder Bannerhöhe. Jede Zeile wird
+// unabhängig zentriert, damit eine unvollständige letzte Zeile mittig unter
+// den vollen Zeilen liegt statt links auszurichten.
 function stampLayout(count: number, areaX: number, areaY: number, areaW: number, areaH: number): StampCell[] {
-  const rows = count > 6 ? 2 : 1;
-  const cols = Math.ceil(count / rows);
-  const cellW = areaW / cols;
-  const cellH = areaH / rows;
-  const r = Math.min(cellW, cellH) * 0.36;
+  const { rows, cols, cellSize } = layoutStampGrid(count, areaW, areaH, STAMP_GRID_GAP, STAMP_MAX_CELL);
+  const r = cellSize * 0.46;
+  const gridHeight = rows * cellSize + STAMP_GRID_GAP * (rows - 1);
+  const offsetY = areaY + (areaH - gridHeight) / 2;
   const cells: StampCell[] = [];
   for (let i = 0; i < count; i++) {
     const row = Math.floor(i / cols);
     const col = i % cols;
-    const rowCount = row === rows - 1 ? count - cols * (rows - 1) : cols;
-    const rowW = rowCount * cellW;
-    const rowOffsetX = areaX + (areaW - rowW) / 2;
-    const cx = rowOffsetX + col * cellW + cellW / 2;
-    const cy = areaY + row * cellH + cellH / 2;
+    const rowCount = Math.min(cols, count - row * cols);
+    const rowWidth = rowCount * cellSize + STAMP_GRID_GAP * (rowCount - 1);
+    const rowOffsetX = areaX + (areaW - rowWidth) / 2;
+    const cx = rowOffsetX + col * (cellSize + STAMP_GRID_GAP) + cellSize / 2;
+    const cy = offsetY + row * (cellSize + STAMP_GRID_GAP) + cellSize / 2;
     cells.push({ cx, cy, r, filled: false });
   }
   return cells;

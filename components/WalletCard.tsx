@@ -8,6 +8,17 @@ import {
   type CardDesign,
 } from "@/lib/card-design";
 import { stampIconPath } from "@/lib/stamp-icons";
+import { layoutStampGrid } from "@/lib/stamp-layout";
+
+// Feste Pixel-Maße der Banner-Nutzfläche - aus der festen Kartenbreite
+// hergeleitet (w-[340px] Karte, p-5 = 20px Kartenpolster, aspectRatio
+// 1125/369 fürs Banner, px-4 = 16px Innenpolster im Banner selbst), NICHT
+// per DOM-Messung: WalletCard wird auch als Server Component gerendert
+// (öffentliche Kartenseite), wo es kein ResizeObserver/DOM gibt.
+const BANNER_AREA_W = 340 - 2 * 20 - 2 * 16;
+const BANNER_AREA_H = (340 - 2 * 20) / (1125 / 369);
+const GRID_GAP = 8;
+const MAX_CELL = 64;
 
 interface Props {
   title: string;
@@ -24,9 +35,15 @@ interface Props {
   justEarned?: number;
 }
 
-// Stempelraster: dieselbe Zeilen-/Spalten-Aufteilung (>6 Stempel -> 2 Reihen)
-// wie beim serverseitigen Compositing in lib/card-render.ts, damit Web-Karte
-// und Apple-/Google-Wallet-Pass optisch identisch wirken.
+// Stempelraster: die Zeilen-/Spalten-Aufteilung und Zellengröße kommen aus
+// layoutStampGrid() (lib/stamp-layout.ts) - derselben Funktion, die auch
+// das serverseitige Compositing für Apple/Google (lib/card-render.ts)
+// nutzt. Jede Zelle bekommt eine EXPLIZITE Pixelgröße statt einer
+// Prozentbreite: dadurch ist rechnerisch garantiert, dass die komplette
+// Anordnung in die verfügbare Fläche passt - unabhängig von Stempelanzahl,
+// Icon oder Bannerhöhe. Jede Zeile zentriert sich zusätzlich einzeln
+// (justify-center), damit auch eine unvollständige letzte Zeile mittig
+// unter den vollen Zeilen liegt statt links auszurichten.
 function StampGrid({
   count,
   filledCount,
@@ -40,48 +57,51 @@ function StampGrid({
   design: CardDesign;
   accentColor: string;
 }) {
-  const cols = count > 6 ? Math.ceil(count / 2) : count;
+  const { rows, cols, cellSize } = layoutStampGrid(count, BANNER_AREA_W, BANNER_AREA_H, GRID_GAP, MAX_CELL);
   const iconPath = stampIconPath(design.stampIconKey);
+
+  function renderCell(i: number) {
+    const filled = i < filledCount;
+    const isNew = filled && i >= filledCount - justEarned;
+    return (
+      <div
+        key={i}
+        className={`relative rounded-full grid place-items-center transition-all duration-300 shrink-0 ${
+          isNew ? "stamp-pop" : ""
+        }`}
+        style={{
+          width: cellSize,
+          height: cellSize,
+          ...(filled
+            ? { background: "rgba(255,255,255,0.97)" }
+            : { background: "rgba(255,255,255,0.14)", border: "1.5px solid rgba(255,255,255,0.45)" }),
+        }}
+      >
+        {design.stampIconImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={design.stampIconImage}
+            alt=""
+            className="w-[64%] h-[64%] object-cover rounded-full"
+            style={{ opacity: filled ? 1 : 0.55 }}
+          />
+        ) : (
+          <svg viewBox="0 0 24 24" className="w-[54%] h-[54%]" style={{ opacity: filled ? 1 : 0.6 }}>
+            <path d={iconPath} fill={filled ? accentColor : "#FFFFFF"} />
+          </svg>
+        )}
+      </div>
+    );
+  }
+
   return (
-    // w-full ist hier Pflicht: ohne explizite Breite ist der Flex-Container
-    // selbst "auto"-groß (wird nur von place-items-center zentriert, nicht
-    // gestreckt) - Prozent-Breiten auf den Zellen lösen sich dann gegen eine
-    // unbestimmte Basis auf, wodurch die Icons zu groß gerendert werden und
-    // eine dritte, angeschnittene Zeile über den Bannerrand hinausragt.
-    <div className="flex flex-wrap justify-center content-center gap-2 w-full h-full">
-      {Array.from({ length: count }).map((_, i) => {
-        const filled = i < filledCount;
-        const isNew = filled && i >= filledCount - justEarned;
+    <div className="flex flex-col items-center" style={{ gap: GRID_GAP }}>
+      {Array.from({ length: rows }).map((_, row) => {
+        const rowStart = row * cols;
+        const rowCount = Math.min(cols, count - rowStart);
         return (
-          <div
-            key={i}
-            className="shrink-0"
-            style={{ width: `${100 / cols}%`, maxWidth: 60, minWidth: 30 }}
-          >
-            <div
-              className={`relative aspect-square rounded-full grid place-items-center transition-all duration-300 ${
-                isNew ? "stamp-pop" : ""
-              }`}
-              style={
-                filled
-                  ? { background: "rgba(255,255,255,0.97)" }
-                  : { background: "rgba(255,255,255,0.14)", border: "1.5px solid rgba(255,255,255,0.45)" }
-              }
-            >
-              {design.stampIconImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={design.stampIconImage}
-                  alt=""
-                  className="w-[64%] h-[64%] object-cover rounded-full"
-                  style={{ opacity: filled ? 1 : 0.55 }}
-                />
-              ) : (
-                <svg viewBox="0 0 24 24" className="w-[54%] h-[54%]" style={{ opacity: filled ? 1 : 0.6 }}>
-                  <path d={iconPath} fill={filled ? accentColor : "#FFFFFF"} />
-                </svg>
-              )}
-            </div>
+          <div key={row} className="flex justify-center" style={{ gap: GRID_GAP }}>
+            {Array.from({ length: rowCount }).map((_, c) => renderCell(rowStart + c))}
           </div>
         );
       })}
