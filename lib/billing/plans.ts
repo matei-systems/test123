@@ -2,7 +2,7 @@
 // hinzuzufügen ist ein neuer Eintrag hier plus zwei Umgebungsvariablen
 // (Stripe-Preis-IDs) - keine Code-Änderung an Checkout, Webhook oder
 // Kundenportal nötig, die lesen alle aus dieser Liste.
-export type PlanId = "basic" | "pro" | "premium";
+export type PlanId = "starter" | "business" | "premium";
 export type BillingInterval = "monthly" | "yearly";
 
 export interface PlanDefinition {
@@ -20,8 +20,8 @@ export interface PlanDefinition {
 
 export const PLANS: PlanDefinition[] = [
   {
-    id: "basic",
-    name: "Basic",
+    id: "starter",
+    name: "Starter",
     tagline: "Für den Einstieg mit einem Standort.",
     features: [
       "1 Standort",
@@ -29,16 +29,16 @@ export const PLANS: PlanDefinition[] = [
       "Unbegrenzt Kunden & Karten",
       "Apple & Google Wallet",
     ],
-    displayPriceMonthly: 19,
-    displayPriceYearly: 190,
+    displayPriceMonthly: 59,
+    displayPriceYearly: 590,
     priceIds: {
-      monthly: process.env.STRIPE_PRICE_BASIC_MONTHLY,
-      yearly: process.env.STRIPE_PRICE_BASIC_YEARLY,
+      monthly: process.env.STRIPE_PRICE_STARTER_MONTHLY,
+      yearly: process.env.STRIPE_PRICE_STARTER_YEARLY,
     },
   },
   {
-    id: "pro",
-    name: "Pro",
+    id: "business",
+    name: "Business",
     tagline: "Für wachsende Betriebe mit mehreren Standorten.",
     features: [
       "Bis zu 5 Standorte",
@@ -47,11 +47,11 @@ export const PLANS: PlanDefinition[] = [
       "Team-Verwaltung mit Rollen",
       "Apple & Google Wallet",
     ],
-    displayPriceMonthly: 49,
-    displayPriceYearly: 490,
+    displayPriceMonthly: 119,
+    displayPriceYearly: 1190,
     priceIds: {
-      monthly: process.env.STRIPE_PRICE_PRO_MONTHLY,
-      yearly: process.env.STRIPE_PRICE_PRO_YEARLY,
+      monthly: process.env.STRIPE_PRICE_BUSINESS_MONTHLY,
+      yearly: process.env.STRIPE_PRICE_BUSINESS_YEARLY,
     },
   },
   {
@@ -66,8 +66,8 @@ export const PLANS: PlanDefinition[] = [
       "Priorisierter Support",
       "Apple & Google Wallet",
     ],
-    displayPriceMonthly: 99,
-    displayPriceYearly: 990,
+    displayPriceMonthly: 249,
+    displayPriceYearly: 2490,
     priceIds: {
       monthly: process.env.STRIPE_PRICE_PREMIUM_MONTHLY,
       yearly: process.env.STRIPE_PRICE_PREMIUM_YEARLY,
