@@ -534,3 +534,47 @@ create index if not exists idx_apple_reg_device on apple_wallet_registrations(de
 create index if not exists idx_apple_reg_serial on apple_wallet_registrations(serial_number);
 
 alter table apple_wallet_registrations enable row level security;
+
+-- ============================================================================
+--  P12: Stripe & Abonnements
+--  - Abrechnungsfelder direkt auf organizations (1 Abo pro Betrieb - passt
+--    zum bestehenden Multi-Tenant-Modell, keine eigene Tabelle nötig).
+--  - trial_ends_at wird bei der Betriebs-Anlage gesetzt (14 Tage, siehe
+--    app/dashboard/onboarding/actions.ts) - komplett ohne Kreditkarte,
+--    damit die bestehende reibungslose Anmeldung erhalten bleibt. Erst wenn
+--    ein Betrieb tatsächlich least Zahlungsdaten hinterlegt (Stripe
+--    Checkout), übernimmt lib/billing/access.ts den Stripe-eigenen Status;
+--    bis dahin zählt allein dieses Datum.
+--  - subscription_status/current_period_end/etc. werden AUSSCHLIESSLICH vom
+--    Stripe-Webhook geschrieben (service_role, RLS-Bypass) - siehe
+--    app/api/stripe/webhook/route.ts. Server Actions bitten Stripe nur um
+--    Änderungen, sie schreiben diese Felder nie selbst (ein einziger
+--    Schreiber verhindert Wettlaufsituationen zwischen optimistischem
+--    UI-Update und dem, was Stripe tatsächlich bestätigt).
+-- ============================================================================
+alter table organizations add column if not exists stripe_customer_id text;
+alter table organizations add column if not exists stripe_subscription_id text;
+alter table organizations add column if not exists stripe_price_id text;
+alter table organizations add column if not exists subscription_status text; -- trialing|active|past_due|canceled|unpaid|incomplete|incomplete_expired|paused
+alter table organizations add column if not exists plan_id text;             -- 'basic' | 'pro' | 'premium' (siehe lib/billing/plans.ts)
+alter table organizations add column if not exists billing_interval text;    -- 'monthly' | 'yearly'
+alter table organizations add column if not exists current_period_end timestamptz;
+alter table organizations add column if not exists cancel_at_period_end boolean not null default false;
+alter table organizations add column if not exists trial_ends_at timestamptz;
+
+-- Für bereits bestehende Betriebe (vor P12 angelegt): 14 Tage ab jetzt,
+-- damit niemand rückwirkend ohne Vorwarnung ausgesperrt wird.
+update organizations set trial_ends_at = now() + interval '14 days' where trial_ends_at is null;
+
+create index if not exists idx_org_stripe_customer on organizations(stripe_customer_id);
+
+-- Spaltenschutz: Postgres-RLS ist rein zeilenbasiert - die bestehende
+-- org_update-Policy (jeder Admin darf die eigene Org-Zeile aktualisieren)
+-- würde ohne diese Einschränkung auch die Abrechnungsfelder für JEDEN
+-- Admin beschreibbar machen, sobald sie über die REST-API direkt statt über
+-- unsere Server Actions angesprochen werden - ein direkter Weg, sich selbst
+-- kostenlos ein "aktives" Abo zu verschaffen. Deshalb: nur name/slug bleiben
+-- für eingeloggte Nutzer beschreibbar, alles andere (inkl. aller künftigen
+-- Spalten) ist implizit gesperrt und nur für service_role offen.
+revoke update on organizations from authenticated, anon;
+grant update (name, slug) on organizations to authenticated;

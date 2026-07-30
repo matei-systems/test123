@@ -14,6 +14,7 @@ const LINKS = [
   { href: "/dashboard/activity", label: "Aktivität", min: "admin" as Role },
   { href: "/dashboard/locations", label: "Standorte", min: "admin" as Role },
   { href: "/dashboard/team", label: "Team", min: "staff" as Role },
+  { href: "/dashboard/billing", label: "Abrechnung", min: "staff" as Role },
 ];
 
 function NavLinks({ onNavigate, role }: { onNavigate?: () => void; role: Role | null }) {

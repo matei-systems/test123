@@ -19,9 +19,14 @@ export async function createOrg(formData: FormData) {
     "-" +
     Math.random().toString(36).slice(2, 6);
 
+  // 14 Tage kostenlose Testphase ab Anlage, ganz ohne Kreditkarte - siehe
+  // lib/billing/access.ts. Sobald der Betrieb tatsächlich ein Stripe-Abo
+  // abschließt, übernimmt dessen Status; bis dahin zählt allein dieses Datum.
+  const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
   const { error } = await supabase
     .from("organizations")
-    .insert({ name, slug, owner_id: user.id });
+    .insert({ name, slug, owner_id: user.id, trial_ends_at: trialEndsAt });
 
   if (error) redirect("/dashboard/onboarding?error=" + encodeURIComponent(translateDbError(error.message)));
   redirect("/dashboard");
