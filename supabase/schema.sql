@@ -600,3 +600,131 @@ alter table profiles add column if not exists terms_version text;
 -- onboarding/actions.ts), serverseitig erzwungen wie terms_accepted_at.
 alter table organizations add column if not exists avv_accepted_at timestamptz;
 alter table organizations add column if not exists avv_version text;
+
+-- ============================================================================
+--  P14: Admin-/Superadmin-Bereich für die Plattform (Matei Systems)
+--  - platform_admins: wer darf ins Admin-Panel (/admin)? Bewusst komplett
+--    getrennt von memberships/profiles - ein Betriebs-Owner ist NIEMALS
+--    automatisch Plattform-Admin, und umgekehrt braucht ein Plattform-Admin
+--    keine Mitgliedschaft in irgendeiner Organisation. RLS ist aktiviert,
+--    bekommt aber bewusst KEINE Policies (exakt wie apple_wallet_registrations
+--    weiter oben) - das sperrt anon/authenticated per Standard-Deny komplett
+--    aus, nur der RLS-Bypass von service_role kommt durch. lib/admin.ts prüft
+--    darüber serverseitig, ob der eingeloggte User Admin ist, und mit welcher
+--    Rolle - das Admin-Panel selbst liest/schreibt danach ausschließlich über
+--    den Service-Role-Client (wie an jeder anderen privilegierten Stelle der
+--    App), NIE über RLS-Policies mit "is_platform_admin()"-Sonderfällen in
+--    den Tabellen anderer Betriebe - ein einziger, klar auditierbarer
+--    Durchsetzungspunkt statt verteilter Spezialfälle in jeder RLS-Policy.
+--  - support_tickets/support_ticket_messages: Support-Fälle der Betriebe.
+--    Ein Betrieb sieht/erstellt nur seine eigenen (normale is_org_member-RLS
+--    wie überall sonst), Admin-Antworten und Status-Änderungen laufen über
+--    den Service-Role-Client im Admin-Panel.
+--  - admin_audit_log: jede schreibende Admin-Aktion (Sperren, Testphase
+--    verlängern, Tarif manuell ändern) wird protokolliert - Nachvollziehbarkeit,
+--    sobald mehrere Personen Admin-Zugriff haben. RLS aktiviert, keine
+--    Policies (nur service_role), wie platform_admins.
+--  - organizations.admin_suspended: manuelle Plattform-Sperre, unabhängig vom
+--    Stripe-Abrechnungsstatus (z. B. bei Missbrauch/AGB-Verstoß) - siehe
+--    lib/org.ts requireOrgRole(), das dies VOR dem Abrechnungsstatus prüft
+--    und dabei ausnahmslos greift (auch für Abrechnungs-Aktionen selbst,
+--    anders als eine reine Testphasen-/Zahlungs-Einschränkung).
+-- ============================================================================
+do $$ begin
+  create type admin_role as enum ('superadmin', 'support');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type ticket_status as enum ('open', 'in_progress', 'resolved', 'closed');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type ticket_priority as enum ('low', 'normal', 'high', 'urgent');
+exception when duplicate_object then null; end $$;
+
+create table if not exists platform_admins (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  role        admin_role not null default 'support',
+  created_at  timestamptz not null default now(),
+  unique (user_id)
+);
+
+alter table platform_admins enable row level security;
+
+create table if not exists support_tickets (
+  id           uuid primary key default gen_random_uuid(),
+  org_id       uuid not null references organizations(id) on delete cascade,
+  created_by   uuid references profiles(id) on delete set null,
+  subject      text not null,
+  status       ticket_status not null default 'open',
+  priority     ticket_priority not null default 'normal',
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create table if not exists support_ticket_messages (
+  id           uuid primary key default gen_random_uuid(),
+  ticket_id    uuid not null references support_tickets(id) on delete cascade,
+  author_id    uuid references profiles(id) on delete set null,
+  is_admin     boolean not null default false,
+  body         text not null,
+  created_at   timestamptz not null default now()
+);
+
+create table if not exists admin_audit_log (
+  id           uuid primary key default gen_random_uuid(),
+  admin_id     uuid not null references auth.users(id) on delete cascade,
+  action       text not null,
+  target_type  text not null,
+  target_id    uuid,
+  details      jsonb not null default '{}'::jsonb,
+  created_at   timestamptz not null default now()
+);
+
+alter table organizations add column if not exists admin_suspended boolean not null default false;
+alter table organizations add column if not exists admin_suspended_reason text;
+
+drop trigger if exists trg_tickets_updated on support_tickets;
+create trigger trg_tickets_updated
+  before update on support_tickets
+  for each row execute function set_updated_at();
+
+-- Indizes - dieselbe "Tausende Organisationen"-Perspektive wie beim
+-- Kern-Schema weiter oben: Listen-/Filter-/Sortier-Spalten des Admin-Panels
+-- sind indiziert, damit organizations/-Listen und Support-Listen auch bei
+-- sehr vielen Betrieben schnell bleiben.
+create index if not exists idx_org_created_at    on organizations(created_at desc);
+create index if not exists idx_org_subscription  on organizations(subscription_status);
+create index if not exists idx_org_plan          on organizations(plan_id);
+create index if not exists idx_org_name_lower    on organizations(lower(name));
+create index if not exists idx_profiles_email    on profiles(lower(email));
+create index if not exists idx_tickets_org       on support_tickets(org_id);
+create index if not exists idx_tickets_status    on support_tickets(status, created_at desc);
+create index if not exists idx_ticket_msgs       on support_ticket_messages(ticket_id, created_at);
+create index if not exists idx_admin_audit_admin on admin_audit_log(admin_id, created_at desc);
+create index if not exists idx_admin_audit_target on admin_audit_log(target_type, target_id);
+
+alter table support_tickets         enable row level security;
+alter table support_ticket_messages enable row level security;
+alter table admin_audit_log         enable row level security;
+
+drop policy if exists tickets_select on support_tickets;
+create policy tickets_select on support_tickets for select using (is_org_member(org_id));
+drop policy if exists tickets_insert on support_tickets;
+create policy tickets_insert on support_tickets for insert with check (is_org_member(org_id) and created_by = auth.uid());
+
+-- Nachrichten: jedes Mitglied des Betriebs sieht den ganzen Thread (inkl.
+-- Admin-Antworten) und darf selbst antworten - aber NIE mit is_admin=true,
+-- das ist Admin-Antworten über den Service-Role-Client vorbehalten (RLS
+-- verhindert, dass ein manipulierter Client sich als Admin ausgibt).
+drop policy if exists ticket_msgs_select on support_ticket_messages;
+create policy ticket_msgs_select on support_ticket_messages for select using (
+  exists (select 1 from support_tickets t where t.id = ticket_id and is_org_member(t.org_id))
+);
+drop policy if exists ticket_msgs_insert on support_ticket_messages;
+create policy ticket_msgs_insert on support_ticket_messages for insert with check (
+  is_admin = false
+  and author_id = auth.uid()
+  and exists (select 1 from support_tickets t where t.id = ticket_id and is_org_member(t.org_id))
+);

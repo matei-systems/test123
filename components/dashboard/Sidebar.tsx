@@ -14,6 +14,7 @@ const LINKS = [
   { href: "/dashboard/activity", label: "Aktivität", min: "admin" as Role },
   { href: "/dashboard/locations", label: "Standorte", min: "admin" as Role },
   { href: "/dashboard/team", label: "Team", min: "staff" as Role },
+  { href: "/dashboard/support", label: "Support", min: "staff" as Role },
   { href: "/dashboard/billing", label: "Abrechnung", min: "staff" as Role },
 ];
 
@@ -59,10 +60,12 @@ export default function Sidebar({
   orgName,
   role,
   signOutAction,
+  isPlatformAdmin = false,
 }: {
   orgName: string | null;
   role: Role | null;
   signOutAction: (formData: FormData) => void | Promise<void>;
+  isPlatformAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -114,6 +117,15 @@ export default function Sidebar({
               </button>
             </div>
             <NavLinks onNavigate={() => setOpen(false)} role={role} />
+            {isPlatformAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setOpen(false)}
+                className="px-3 py-2.5 rounded-lg text-sm text-gold hover:text-gold-bright hover:bg-white/[0.04] transition-colors"
+              >
+                Admin-Panel ↗
+              </Link>
+            )}
             <div className="mt-auto pt-3">
               <div className="flex items-center gap-3 px-3 mb-2 text-[11px] text-faint">
                 <Link href="/impressum" className="hover:text-gold-bright">Impressum</Link>
@@ -134,6 +146,14 @@ export default function Sidebar({
       <aside className="hidden md:flex flex-col border-r border-white/[0.07] bg-[#0E0E16] p-4 gap-1">
         <Logo orgName={orgName} />
         <NavLinks role={role} />
+        {isPlatformAdmin && (
+          <Link
+            href="/admin"
+            className="px-3 py-2.5 rounded-lg text-sm text-gold hover:text-gold-bright hover:bg-white/[0.04] transition-colors"
+          >
+            Admin-Panel ↗
+          </Link>
+        )}
         <div className="mt-auto pt-3">
           <div className="flex items-center gap-3 px-3 mb-2 text-[11px] text-faint">
             <Link href="/impressum" className="hover:text-gold-bright">Impressum</Link>

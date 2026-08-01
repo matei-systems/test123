@@ -54,6 +54,17 @@ export async function requireOrgRole(
   if (!user) return { ok: false, error: "Bitte melde dich an." };
   if (!org) return { ok: false, error: "Kein Betrieb gefunden." };
   if (!hasMinRole(role, min)) return { ok: false, error: "Dafür fehlt dir die Berechtigung." };
+  // Plattform-Sperre (P14, Admin-Panel) greift ausnahmslos - auch für
+  // Abrechnungs-Aktionen selbst (requireActive: false), anders als eine
+  // reine Testphasen-/Zahlungs-Einschränkung. Eine manuelle Sperre ist eine
+  // bewusste Admin-Entscheidung (z. B. Missbrauch/AGB-Verstoß), keine
+  // automatische Abrechnungsfolge.
+  if (org.admin_suspended) {
+    return {
+      ok: false,
+      error: org.admin_suspended_reason || "Dieser Betrieb wurde von der Plattform gesperrt. Bitte kontaktiere den Support.",
+    };
+  }
   if (requireActive) {
     const billing = computeBillingInfo(org);
     if (billing.state === "restricted") {
