@@ -10,9 +10,9 @@ export default function AgbPage() {
         <h2>1. Geltungsbereich</h2>
         <p>
           Diese Allgemeinen Geschäftsbedingungen gelten für sämtliche Verträge zwischen {COMPANY.legalName}{" "}
-          („Matei Loyalty", „wir") und Unternehmern im Sinne von § 14 BGB („Kunde"), die die Plattform Matei
-          Loyalty zur Verwaltung digitaler Treuekarten nutzen. Matei Loyalty richtet sich ausschließlich an
-          Unternehmer, nicht an Verbraucher.
+          ({COMPANY.tradingName}, „Matei Loyalty", „wir") und Unternehmern im Sinne von § 1 UGB („Kunde"), die
+          die Plattform Matei Loyalty zur Verwaltung digitaler Treuekarten nutzen. Matei Loyalty richtet sich
+          ausschließlich an Unternehmer, nicht an Verbraucher.
         </p>
       </section>
 
@@ -82,9 +82,9 @@ export default function AgbPage() {
         <p>
           Der Kunde ist als datenschutzrechtlich Verantwortlicher für die über Matei Loyalty erhobenen Daten
           seiner eigenen Endkunden (Treueprogramm-Mitglieder) verpflichtet, eine eigene Rechtsgrundlage für
-          deren Verarbeitung sicherzustellen und den Abschluss eines Auftragsverarbeitungsvertrags (AVV) mit
-          uns zu bestätigen. Der Kunde verpflichtet sich, die Plattform nicht missbräuchlich, insbesondere
-          nicht zur Versendung unerwünschter Werbung, zu nutzen.
+          deren Verarbeitung sicherzustellen. Mit der Anlage eines Betriebskontos akzeptiert der Kunde unseren{" "}
+          <a href="/avv">Auftragsverarbeitungsvertrag (AVV)</a>. Der Kunde verpflichtet sich, die Plattform
+          nicht missbräuchlich, insbesondere nicht zur Versendung unerwünschter Werbung, zu nutzen.
         </p>
       </section>
 
@@ -105,7 +105,7 @@ export default function AgbPage() {
         <p>
           Für die Verarbeitung personenbezogener Daten gilt unsere{" "}
           <a href="/datenschutz">Datenschutzerklärung</a>. Für die Verarbeitung der Endkundendaten des Kunden
-          schließen die Parteien einen gesonderten Auftragsverarbeitungsvertrag (AVV) ab.
+          gilt der in § 8 genannte <a href="/avv">Auftragsverarbeitungsvertrag (AVV)</a>.
         </p>
       </section>
 
@@ -121,10 +121,11 @@ export default function AgbPage() {
       <section>
         <h2>12. Schlussbestimmungen</h2>
         <p>
-          Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts.
-          Gerichtsstand für alle Streitigkeiten aus diesem Vertrag ist, soweit gesetzlich zulässig,{" "}
-          {COMPANY.city}. Sollte eine Bestimmung dieser AGB unwirksam sein, bleibt die Wirksamkeit der
-          übrigen Bestimmungen unberührt.
+          Es gilt österreichisches Recht unter Ausschluss des UN-Kaufrechts und der Verweisungsnormen des
+          internationalen Privatrechts. Für alle Streitigkeiten aus diesem Vertrag ist, soweit gesetzlich
+          zulässig, das sachlich zuständige Gericht am Sitz des Anbieters ({COMPANY.city}) vereinbart. Sollte
+          eine Bestimmung dieser AGB unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen
+          unberührt.
         </p>
       </section>
     </LegalLayout>

@@ -26,7 +26,7 @@ export default function LegalLayout({
           {children}
         </div>
 
-        <div className="mt-12 pt-6 border-t border-line flex gap-4 text-xs text-faint">
+        <div className="mt-12 pt-6 border-t border-line flex flex-wrap gap-4 text-xs text-faint">
           <Link href="/impressum" className="hover:text-gold-bright">
             Impressum
           </Link>
@@ -35,6 +35,9 @@ export default function LegalLayout({
           </Link>
           <Link href="/agb" className="hover:text-gold-bright">
             AGB
+          </Link>
+          <Link href="/avv" className="hover:text-gold-bright">
+            AVV
           </Link>
         </div>
       </div>

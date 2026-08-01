@@ -11,9 +11,10 @@ export default function DatenschutzPage() {
         <p>
           Verantwortlicher im Sinne der Datenschutz-Grundverordnung (DSGVO) ist:
           <br />
-          {COMPANY.legalName}, {COMPANY.street}, {COMPANY.postalCode} {COMPANY.city}, {COMPANY.country}
+          {COMPANY.legalName} ({COMPANY.tradingName}), {COMPANY.street}, {COMPANY.postalCode} {COMPANY.city},{" "}
+          {COMPANY.country}
           <br />
-          E-Mail: {COMPANY.email}
+          E-Mail: {COMPANY.email} · Telefon: {COMPANY.phone}
         </p>
       </section>
 
@@ -32,8 +33,9 @@ export default function DatenschutzPage() {
             Als <strong>Auftragsverarbeiter</strong> für die Endkundendaten, die ein Betrieb über seine
             Treuekarten sammelt (Name, optional E-Mail, Stempel-/Punktestand der Kundschaft des Betriebs). Für
             diese Daten ist der jeweilige Betrieb (z. B. das Café, der Friseursalon) datenschutzrechtlich
-            verantwortlich; wir verarbeiten sie ausschließlich in dessen Auftrag auf Basis eines
-            Auftragsverarbeitungsvertrags (AVV).
+            verantwortlich; wir verarbeiten sie ausschließlich in dessen Auftrag auf Basis unseres{" "}
+            <a href="/avv">Auftragsverarbeitungsvertrags (AVV)</a>, den jeder Betrieb bei der Kontoanlage
+            akzeptiert.
           </li>
         </ul>
       </section>
@@ -84,8 +86,8 @@ export default function DatenschutzPage() {
         <h2>7. Cookies</h2>
         <p>
           Wir setzen ausschließlich technisch notwendige Cookies ein, um die Anmeldung (Session) aufrecht zu
-          erhalten. Diese Cookies fallen unter § 25 Abs. 2 TTDSG bzw. Art. 6 Abs. 1 lit. f DSGVO und bedürfen
-          keiner gesonderten Einwilligung. Wir setzen aktuell keine Analyse-, Marketing- oder
+          erhalten. Diese Cookies fallen unter § 165 Abs. 3 TKG 2021 bzw. Art. 6 Abs. 1 lit. f DSGVO und
+          bedürfen keiner gesonderten Einwilligung. Wir setzen aktuell keine Analyse-, Marketing- oder
           Tracking-Cookies ein.
         </p>
       </section>
@@ -106,9 +108,10 @@ export default function DatenschutzPage() {
         <h2>9. Speicherdauer</h2>
         <p>
           Wir speichern personenbezogene Daten nur so lange, wie es für die genannten Zwecke erforderlich
-          ist oder gesetzliche Aufbewahrungspflichten (z. B. handels- und steuerrechtliche Fristen von bis
-          zu 10 Jahren für Rechnungsdaten) bestehen. Nach Kündigung eines Betriebskontos werden die
-          zugehörigen Daten nach Ablauf gesetzlicher Aufbewahrungsfristen gelöscht.
+          ist oder gesetzliche Aufbewahrungspflichten bestehen (insbesondere unternehmens- und
+          abgabenrechtliche Aufbewahrungsfristen von bis zu 7 Jahren für Rechnungsdaten gemäß § 132 BAO
+          und § 212 UGB). Nach Kündigung eines Betriebskontos werden die zugehörigen Daten nach Ablauf
+          gesetzlicher Aufbewahrungsfristen gelöscht.
         </p>
       </section>
 
@@ -122,9 +125,20 @@ export default function DatenschutzPage() {
           <li>Einschränkung der Verarbeitung (Art. 18 DSGVO)</li>
           <li>Datenübertragbarkeit (Art. 20 DSGVO)</li>
           <li>Widerspruch gegen die Verarbeitung (Art. 21 DSGVO)</li>
-          <li>Beschwerde bei einer Datenschutz-Aufsichtsbehörde (Art. 77 DSGVO)</li>
+          <li>Beschwerde bei der Datenschutzbehörde (Art. 77 DSGVO)</li>
         </ul>
-        <p>Wenden Sie sich dazu an: {COMPANY.email}</p>
+        <p>Für Anfragen zu Ihren Daten wenden Sie sich an: {COMPANY.email}</p>
+        <p>
+          Zuständige Aufsichtsbehörde in Österreich:
+          <br />
+          Österreichische Datenschutzbehörde (DSB)
+          <br />
+          Barichgasse 40-42, 1030 Wien
+          <br />
+          <a href="https://www.dsb.gv.at" target="_blank" rel="noreferrer">
+            www.dsb.gv.at
+          </a>
+        </p>
       </section>
     </LegalLayout>
   );

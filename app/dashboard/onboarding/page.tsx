@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createOrg } from "./actions";
 import SubmitButton from "@/components/SubmitButton";
 
@@ -25,6 +26,21 @@ export default function OnboardingPage({
           <label className="label">Name des Betriebs</label>
           <input className="input" name="name" required placeholder="z. B. Café Central" />
         </div>
+        <label className="flex items-start gap-2.5 text-sm text-dim cursor-pointer">
+          <input
+            type="checkbox"
+            name="acceptAvv"
+            required
+            className="mt-0.5 w-4 h-4 rounded border-line bg-ink accent-gold shrink-0"
+          />
+          <span>
+            Ich akzeptiere den{" "}
+            <Link href="/avv" target="_blank" className="text-gold hover:text-gold-bright">
+              Auftragsverarbeitungsvertrag (AVV)
+            </Link>{" "}
+            für die Verarbeitung der Daten meiner Kundschaft.
+          </span>
+        </label>
         <SubmitButton pendingText="Wird angelegt…" className="btn btn-primary w-full">
           Weiter
         </SubmitButton>

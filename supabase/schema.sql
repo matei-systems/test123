@@ -591,3 +591,12 @@ grant update (name, slug) on organizations to authenticated;
 -- ============================================================================
 alter table profiles add column if not exists terms_accepted_at timestamptz;
 alter table profiles add column if not exists terms_version text;
+
+-- Der AVV (Auftragsverarbeitungsvertrag, Art. 28 DSGVO) ist eine Vereinbarung
+-- zwischen Matei Loyalty und dem jeweiligen BETRIEB (nicht der einzelnen
+-- Person, die sich registriert hat) - ein Nutzer könnte später mehrere
+-- Betriebe anlegen, die AVV-Zustimmung gehört daher auf organizations, nicht
+-- auf profiles. Wird bei der Betriebs-Anlage gesetzt (app/dashboard/
+-- onboarding/actions.ts), serverseitig erzwungen wie terms_accepted_at.
+alter table organizations add column if not exists avv_accepted_at timestamptz;
+alter table organizations add column if not exists avv_version text;
