@@ -578,3 +578,16 @@ create index if not exists idx_org_stripe_customer on organizations(stripe_custo
 -- Spalten) ist implizit gesperrt und nur für service_role offen.
 revoke update on organizations from authenticated, anon;
 grant update (name, slug) on organizations to authenticated;
+
+-- ============================================================================
+--  P13: Rechtliche Pflichtseiten & Zustimmungs-Tracking
+--  - terms_accepted_at/terms_version dokumentieren, dass und wann ein Nutzer
+--    AGB + Datenschutzerklärung akzeptiert hat (Nachweispflicht). Wird beim
+--    Registrieren serverseitig gesetzt (app/register/actions.ts), NIE nur
+--    clientseitig geprüft - eine reine HTML-"required"-Checkbox lässt sich
+--    umgehen. terms_version erlaubt es später, bei einer inhaltlichen
+--    Änderung der AGB gezielt nur die Nutzer mit veralteter Version erneut
+--    zur Zustimmung aufzufordern, ohne die Historie zu verlieren.
+-- ============================================================================
+alter table profiles add column if not exists terms_accepted_at timestamptz;
+alter table profiles add column if not exists terms_version text;

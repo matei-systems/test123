@@ -115,6 +115,11 @@ export default function Sidebar({
             </div>
             <NavLinks onNavigate={() => setOpen(false)} role={role} />
             <div className="mt-auto pt-3">
+              <div className="flex items-center gap-3 px-3 mb-2 text-[11px] text-faint">
+                <Link href="/impressum" className="hover:text-gold-bright">Impressum</Link>
+                <Link href="/datenschutz" className="hover:text-gold-bright">Datenschutz</Link>
+                <Link href="/agb" className="hover:text-gold-bright">AGB</Link>
+              </div>
               <form action={signOutAction}>
                 <SubmitButton pendingText="Wird abgemeldet…" className="btn btn-ghost w-full text-sm">
                   Abmelden
@@ -130,6 +135,11 @@ export default function Sidebar({
         <Logo orgName={orgName} />
         <NavLinks role={role} />
         <div className="mt-auto pt-3">
+          <div className="flex items-center gap-3 px-3 mb-2 text-[11px] text-faint">
+            <Link href="/impressum" className="hover:text-gold-bright">Impressum</Link>
+            <Link href="/datenschutz" className="hover:text-gold-bright">Datenschutz</Link>
+            <Link href="/agb" className="hover:text-gold-bright">AGB</Link>
+          </div>
           <form action={signOutAction}>
             <button className="btn btn-ghost w-full text-sm">Abmelden</button>
           </form>

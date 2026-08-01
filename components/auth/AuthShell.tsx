@@ -36,6 +36,18 @@ export default function AuthShell({
         </div>
 
         {footer && <div className="mt-6 text-center text-sm text-faint">{footer}</div>}
+
+        <div className="mt-8 flex items-center justify-center gap-4 text-xs text-faint">
+          <Link href="/impressum" className="hover:text-gold-bright">
+            Impressum
+          </Link>
+          <Link href="/datenschutz" className="hover:text-gold-bright">
+            Datenschutz
+          </Link>
+          <Link href="/agb" className="hover:text-gold-bright">
+            AGB
+          </Link>
+        </div>
       </div>
     </main>
   );

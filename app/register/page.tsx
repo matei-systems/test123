@@ -74,7 +74,25 @@ export default function RegisterPage({
           autoComplete="new-password"
           placeholder="mind. 6 Zeichen"
         />
-        <div className="mb-5" />
+        <label className="flex items-start gap-2.5 mt-4 mb-5 text-sm text-dim cursor-pointer">
+          <input
+            type="checkbox"
+            name="acceptTerms"
+            required
+            className="mt-0.5 w-4 h-4 rounded border-line bg-ink accent-gold shrink-0"
+          />
+          <span>
+            Ich akzeptiere die{" "}
+            <Link href="/agb" target="_blank" className="text-gold hover:text-gold-bright">
+              AGB
+            </Link>{" "}
+            und die{" "}
+            <Link href="/datenschutz" target="_blank" className="text-gold hover:text-gold-bright">
+              Datenschutzerklärung
+            </Link>
+            .
+          </span>
+        </label>
         <SubmitButton pendingText="Konto wird erstellt…">Konto erstellen</SubmitButton>
       </form>
     </AuthShell>
