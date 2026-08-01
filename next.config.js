@@ -6,6 +6,11 @@ const { withSentryConfig } = require("@sentry/nextjs");
 // CSP bewusst mit 'unsafe-inline' für Styles (Tailwind + einige inline
 // style={{}}-Attribute im gesamten Code) - eine strikte nonce-basierte CSP
 // wäre ein größerer, eigenständiger Umbau und ist hier nicht das Ziel.
+// 'unsafe-eval' nur im Dev-Modus (Next.js' React-Refresh/eval-basierte
+// Sourcemaps brauchen es) - production build/scan-Seite (jsqr, reines JS,
+// kein WASM) kommt ohne aus, geprüft per Grep über den kompletten Code
+// inkl. node_modules/jsqr.
+const scriptSrc = ["'self'", "'unsafe-inline'", ...(process.env.NODE_ENV !== "production" ? ["'unsafe-eval'"] : [])];
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -15,7 +20,7 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      `script-src ${scriptSrc.join(" ")}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
@@ -39,9 +44,15 @@ const nextConfig = {
   // instrumentationHook: Next.js' Hook für instrumentation.ts (P15,
   // Sentry-Serverstart) - in dieser Next-Version noch experimentell/
   // standardmäßig aus, anders als ab Next 15.
+  // Next.js begrenzt Server-Action-Anfragen standardmäßig auf 1MB - der
+  // Bild-Upload (app/dashboard/programs/upload-actions.ts) erlaubt aber
+  // bewusst bis zu 4MB. Ohne dieses Limit würde jeder Upload zwischen 1
+  // und 4MB mit einem rohen Next.js-Fehler statt der eigenen, verständlichen
+  // Validierungsmeldung scheitern (im Rahmen des P15-Audits gefunden).
   experimental: {
     serverComponentsExternalPackages: ["@napi-rs/canvas"],
     instrumentationHook: true,
+    serverActions: { bodySizeLimit: "5mb" },
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

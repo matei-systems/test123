@@ -747,3 +747,16 @@ create table if not exists rate_limit_events (
 create index if not exists idx_rate_limit_key_created on rate_limit_events(key, created_at desc);
 
 alter table rate_limit_events enable row level security;
+
+-- ============================================================================
+--  P15-Abschluss: fehlende Indizes (im Performance-Audit gefunden)
+--  - cards.customer_id/program_id wurden bisher gefiltert, aber nie
+--    indiziert (nur org_id und serial_number waren es) - betrifft die
+--    Kunden-Detailseite und die Programm-Kartenliste.
+--  - customers(org_id, email) deckt den Dubletten-Check auf der ÖFFENTLICHEN
+--    Beitritts-Seite ab (app/j/[programId]/actions.ts) - ein heißer Pfad,
+--    der mit wachsender Kundenzahl pro Betrieb sonst zunehmend langsamer würde.
+-- ============================================================================
+create index if not exists idx_cards_customer on cards(customer_id);
+create index if not exists idx_cards_program on cards(program_id);
+create index if not exists idx_customers_org_email on customers(org_id, email);
