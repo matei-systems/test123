@@ -728,3 +728,22 @@ create policy ticket_msgs_insert on support_ticket_messages for insert with chec
   and author_id = auth.uid()
   and exists (select 1 from support_tickets t where t.id = ticket_id and is_org_member(t.org_id))
 );
+
+-- ============================================================================
+--  P15: Rate-Limiting für Auth-Endpunkte (Login/Registrierung/Passwort-Reset)
+--  - Kein neuer Infrastruktur-Baustein (Redis o.ä.), sondern dieselbe
+--    Postgres-Datenbank, die ohnehin schon überall die Quelle der Wahrheit
+--    ist - passt zum Rest der Architektur und braucht kein zusätzliches
+--    Zugangsdaten-Paar. Siehe lib/rate-limit.ts.
+--  - RLS aktiviert, bewusst OHNE Policies (wie platform_admins/
+--    admin_audit_log) - nur service_role liest/schreibt.
+-- ============================================================================
+create table if not exists rate_limit_events (
+  id          uuid primary key default gen_random_uuid(),
+  key         text not null,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists idx_rate_limit_key_created on rate_limit_events(key, created_at desc);
+
+alter table rate_limit_events enable row level security;

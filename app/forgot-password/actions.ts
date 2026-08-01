@@ -3,9 +3,18 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { translateAuthError } from "@/lib/auth-errors";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function requestPasswordReset(formData: FormData) {
   const email = String(formData.get("email"));
+
+  // 3 Anfragen / Stunde pro IP - verhindert, dass jemand eine fremde
+  // Mailbox mit Passwort-Reset-Mails zuspammt.
+  const rateLimit = await checkRateLimit("forgot-password", { max: 3, windowSeconds: 3600 });
+  if (!rateLimit.allowed) {
+    redirect("/forgot-password?error=" + encodeURIComponent("Zu viele Anfragen. Bitte versuche es später erneut."));
+  }
+
   const supabase = createClient();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 

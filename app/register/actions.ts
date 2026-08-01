@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { translateAuthError } from "@/lib/auth-errors";
 import { LEGAL_VERSION } from "@/lib/legal/company-info";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function signUp(formData: FormData) {
   const email = String(formData.get("email"));
@@ -13,6 +14,18 @@ export async function signUp(formData: FormData) {
   // Serverseitig prüfen, nicht nur das HTML "required" auf der Checkbox -
   // das lässt sich durch einen direkten POST an diese Action umgehen.
   const acceptedTerms = formData.get("acceptTerms") === "on";
+
+  // 5 Registrierungen / Stunde pro IP - schützt gegen automatisierten
+  // Massen-Account-Spam.
+  const rateLimit = await checkRateLimit("register", { max: 5, windowSeconds: 3600 });
+  if (!rateLimit.allowed) {
+    redirect(
+      "/register?error=" +
+        encodeURIComponent("Zu viele Registrierungen von dieser Verbindung. Bitte versuche es später erneut.") +
+        "&email=" +
+        encodeURIComponent(email)
+    );
+  }
 
   if (!acceptedTerms) {
     redirect(

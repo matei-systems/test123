@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { findPlanByPriceId } from "@/lib/billing/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logError } from "@/lib/logger";
 
 // Der Stripe-Webhook ist der EINZIGE Schreiber für Abrechnungsfelder auf
 // organizations (siehe Kommentar in supabase/schema.sql und lib/org.ts) -
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
         break;
     }
   } catch (e: any) {
-    console.error(`[stripe-webhook] Verarbeitung von ${event.type} fehlgeschlagen:`, e.message);
+    logError("stripe-webhook", e, { eventType: event.type, eventId: event.id });
     // 500, damit Stripe automatisch erneut zustellt (könnte ein transienter
     // DB-Fehler gewesen sein) - anders als bei fehlender Metadata, wo ein
     // Retry nichts ändern würde.

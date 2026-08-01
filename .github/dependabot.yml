@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      # Patch/Minor-Updates gebündelt in einem PR statt zwanzig einzelner -
+      # Major-Updates (potenziell breaking, z. B. ein künftiges Next.js 15)
+      # bleiben bewusst einzeln, damit sie einzeln geprüft werden.
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

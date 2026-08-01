@@ -1,0 +1,41 @@
+name: CI
+
+# Läuft bei jedem Push/PR auf den Haupt- und Feature-Branches - reine
+# Qualitäts-Gate-CI (Typecheck + Build), kein Deploy. Das eigentliche
+# Ausliefern übernimmt Vercels Git-Integration automatisch bei jedem Push
+# auf den verbundenen Branch, sobald das Projekt dort einmal verknüpft ist
+# (siehe README/Produktions-Checkliste) - ein eigener Deploy-Workflow würde
+# nur Vercel-Zugangsdaten duplizieren, die Vercel selbst schon verwaltet.
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  typecheck-and-build:
+    runs-on: ubuntu-latest
+    env:
+      # Platzhalter, ausschließlich damit ein Build ohne echte Zugangsdaten
+      # durchläuft (next build braucht keine echte Datenbankverbindung) -
+      # niemals echte Secrets hier eintragen, siehe .env.example.
+      NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build

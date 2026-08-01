@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.3",
+    "@sentry/nextjs": "^10.69.0",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.111.0",
     "jsonwebtoken": "^9.0.3",

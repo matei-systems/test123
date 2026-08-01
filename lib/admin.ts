@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logError } from "@/lib/logger";
 
 export type AdminRole = "superadmin" | "support";
 
@@ -59,5 +60,5 @@ export async function logAdminAction(
   const { error } = await db
     .from("admin_audit_log")
     .insert({ admin_id: adminId, action, target_type: targetType, target_id: targetId, details });
-  if (error) console.error("[admin] Audit-Log-Eintrag fehlgeschlagen:", error.message);
+  if (error) logError("admin.audit-log", error, { action, targetType, targetId });
 }
