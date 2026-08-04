@@ -300,13 +300,21 @@ create policy mem_write  on memberships for all    using (is_org_admin(org_id))
 
 -- Generische Vorlage für alle org-gebundenen Tabellen:
 --   lesen  = Mitglied,  schreiben = Mitglied (Rollenfeinschliff optional)
+drop policy if exists loc_all on locations;
 create policy loc_all      on locations          for all using (is_org_member(org_id)) with check (is_org_member(org_id));
+drop policy if exists prog_all on loyalty_programs;
 create policy prog_all     on loyalty_programs   for all using (is_org_member(org_id)) with check (is_org_member(org_id));
+drop policy if exists cust_all on customers;
 create policy cust_all     on customers          for all using (is_org_member(org_id)) with check (is_org_member(org_id));
+drop policy if exists cards_all on cards;
 create policy cards_all    on cards              for all using (is_org_member(org_id)) with check (is_org_member(org_id));
+drop policy if exists tx_all on transactions;
 create policy tx_all       on transactions       for all using (is_org_member(org_id)) with check (is_org_member(org_id));
+drop policy if exists rewards_all on rewards;
 create policy rewards_all  on rewards            for all using (is_org_member(org_id)) with check (is_org_member(org_id));
+drop policy if exists redeem_all on reward_redemptions;
 create policy redeem_all   on reward_redemptions for all using (is_org_member(org_id)) with check (is_org_member(org_id));
+drop policy if exists camp_all on campaigns;
 create policy camp_all     on campaigns          for all using (is_org_member(org_id)) with check (is_org_member(org_id));
 
 -- ============================================================================
