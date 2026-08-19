@@ -114,6 +114,9 @@ export default function ProgramWizard({
       pointsPerReward: 100,
       rewardDescription: "",
       design: DEFAULT_DESIGN,
+      earningMode: "manual",
+      minPurchaseAmount: null,
+      amountPerPoint: null,
     }
   );
 
@@ -142,6 +145,12 @@ export default function ProgramWizard({
     }
     if (i === 2) {
       if (!input.rewardDescription.trim()) return "Bitte beschreibe die Belohnung.";
+      if (input.earningMode === "amount") {
+        if (input.type === "stamp" && (!input.minPurchaseAmount || input.minPurchaseAmount <= 0))
+          return "Bitte gib den Mindestbetrag für einen Stempel an.";
+        if (input.type === "points" && (!input.amountPerPoint || input.amountPerPoint <= 0))
+          return "Bitte gib den Betrag pro Punkt an.";
+      }
     }
     return null;
   }
@@ -458,6 +467,54 @@ export default function ProgramWizard({
               placeholder="1 Gratis-Kaffee"
               hint='Kurz und konkret, z. B. "1 Gratis-Kaffee" oder "10% Rabatt auf den nächsten Einkauf".'
             />
+
+            <div className="pt-4 border-t border-white/[0.06]">
+              <label className="label">Wie werden {input.type === "stamp" ? "Stempel" : "Punkte"} vergeben?</label>
+              <div className="text-xs text-faint mb-3">
+                Beim manuellen Weg entscheidet dein Personal frei. Bei der automatischen Regel gibt dein Personal beim
+                Scannen einfach den Einkaufsbetrag ein, {input.type === "stamp" ? "der Stempel" : "die Punkte"} werden dann
+                automatisch berechnet.
+              </div>
+              <div className="inline-flex flex-wrap bg-ink border border-line rounded-xl p-1 gap-1 mb-4">
+                {(["manual", "amount"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => set("earningMode", m)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      input.earningMode === m ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+                    }`}
+                  >
+                    {m === "manual" ? "Manuell" : "Nach Einkaufsbetrag"}
+                  </button>
+                ))}
+              </div>
+
+              {input.earningMode === "amount" && input.type === "stamp" && (
+                <Field
+                  label="Mindestbetrag für einen Stempel (€)"
+                  type="number"
+                  min={0.01}
+                  step={0.5}
+                  value={input.minPurchaseAmount ?? ""}
+                  onChange={(e) => set("minPurchaseAmount", Number(e.target.value) || null)}
+                  placeholder="5"
+                  hint='Z. B. "5" → ab 5 € Einkauf gibt es 1 Stempel, darunter keinen.'
+                />
+              )}
+              {input.earningMode === "amount" && input.type === "points" && (
+                <Field
+                  label="Betrag pro Punkt (€)"
+                  type="number"
+                  min={0.01}
+                  step={0.5}
+                  value={input.amountPerPoint ?? ""}
+                  onChange={(e) => set("amountPerPoint", Number(e.target.value) || null)}
+                  placeholder="10"
+                  hint='Z. B. "10" → 1 Punkt je 10 € Einkauf (23 € = 2 Punkte, abgerundet).'
+                />
+              )}
+            </div>
           </div>
         )}
 
@@ -471,6 +528,14 @@ export default function ProgramWizard({
               ["Typ", input.type === "stamp" ? "Stempelkarte" : "Punktekarte"],
               [input.type === "stamp" ? "Stempel bis Belohnung" : "Punkte bis Belohnung", input.type === "stamp" ? input.stampsRequired : input.pointsPerReward],
               ["Belohnung", input.rewardDescription],
+              [
+                "Vergabe",
+                input.earningMode === "manual"
+                  ? "Manuell durch Personal"
+                  : input.type === "stamp"
+                  ? `Automatisch ab ${(input.minPurchaseAmount ?? 0).toFixed(2)} € Einkauf`
+                  : `Automatisch, 1 Punkt je ${(input.amountPerPoint ?? 0).toFixed(2)} € Einkauf`,
+              ],
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between text-sm py-2 border-t border-white/[0.06] first:border-t-0">
                 <span className="text-faint">{label}</span>

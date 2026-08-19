@@ -21,6 +21,7 @@ export default function Scanner() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
+  const [amount, setAmount] = useState("");
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -94,13 +95,25 @@ export default function Scanner() {
     setCard(null);
     setError(null);
     setFlash(null);
+    setAmount("");
     busyRef.current = false;
   }
 
-  async function act(action: (id: string) => Promise<{ error?: string; card?: ScannedCard }>, successMsg: string) {
+  async function act(
+    action: (id: string, purchaseAmount?: number) => Promise<{ error?: string; card?: ScannedCard }>,
+    successMsg: string
+  ) {
     if (!card) return;
+    let purchaseAmount: number | undefined;
+    if (card.earningMode === "amount") {
+      purchaseAmount = Number(amount.replace(",", "."));
+      if (!amount || Number.isNaN(purchaseAmount) || purchaseAmount < 0) {
+        setError("Bitte gib den Einkaufsbetrag an.");
+        return;
+      }
+    }
     setPending(true);
-    const res = await action(card.id);
+    const res = await action(card.id, purchaseAmount);
     setPending(false);
     if (res.error) {
       setError(res.error);
@@ -159,6 +172,23 @@ export default function Scanner() {
                     {error}
                   </div>
                 )}
+                {card.earningMode === "amount" && (
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder={
+                      card.type === "stamp"
+                        ? `Einkaufsbetrag (ab ${(card.minPurchaseAmount ?? 0).toFixed(2)} € = 1 Stempel)`
+                        : `Einkaufsbetrag (${(card.amountPerPoint ?? 0).toFixed(2)} € = 1 Punkt)`
+                    }
+                    className="input mb-2 text-center"
+                    aria-label="Einkaufsbetrag in Euro"
+                  />
+                )}
                 <div className="flex flex-col gap-2">
                   {card.type === "stamp" ? (
                     <button disabled={pending} onClick={() => act(scanStamp, "Stempel vergeben!")} className="btn btn-primary">
@@ -166,7 +196,7 @@ export default function Scanner() {
                     </button>
                   ) : (
                     <button disabled={pending} onClick={() => act(scanAddPoints, "Punkte vergeben!")} className="btn btn-primary">
-                      {pending ? "…" : "+ 10 Punkte geben"}
+                      {pending ? "…" : card.earningMode === "amount" ? "Punkte berechnen & buchen" : "+ 10 Punkte geben"}
                     </button>
                   )}
                   <button

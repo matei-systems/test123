@@ -9,6 +9,7 @@ import { checkStampCooldown } from "@/lib/abuse-protection";
 import type { CardDesign } from "@/lib/card-design";
 import { upsertGoogleLoyaltyClass } from "@/lib/google-wallet";
 import { notifyWalletsOfCardUpdate, registerWalletObjectsForNewCard } from "@/lib/wallet-updates";
+import { unitsFromAmount } from "@/lib/earning-rules";
 
 export interface ProgramInput {
   name: string;
@@ -18,6 +19,9 @@ export interface ProgramInput {
   pointsPerReward: number;
   rewardDescription: string;
   design: CardDesign;
+  earningMode: "manual" | "amount";
+  minPurchaseAmount: number | null;
+  amountPerPoint: number | null;
 }
 
 function validate(input: ProgramInput): string | null {
@@ -27,6 +31,12 @@ function validate(input: ProgramInput): string | null {
   if (input.type === "stamp" && (input.stampsRequired < 3 || input.stampsRequired > 30))
     return "Stempel bis Belohnung muss zwischen 3 und 30 liegen.";
   if (input.type === "points" && input.pointsPerReward < 10) return "Punkte bis Belohnung muss mindestens 10 sein.";
+  if (input.earningMode === "amount") {
+    if (input.type === "stamp" && (!input.minPurchaseAmount || input.minPurchaseAmount <= 0))
+      return "Bitte gib den Mindestbetrag für einen Stempel an.";
+    if (input.type === "points" && (!input.amountPerPoint || input.amountPerPoint <= 0))
+      return "Bitte gib den Betrag pro Punkt an.";
+  }
   return null;
 }
 
@@ -40,6 +50,9 @@ function toRow(input: ProgramInput) {
     points_per_reward: input.pointsPerReward,
     reward_description: input.rewardDescription.trim(),
     design: { ...input.design, logo: logo.toUpperCase().slice(0, 2) },
+    earning_mode: input.earningMode,
+    min_purchase_amount: input.earningMode === "amount" && input.type === "stamp" ? input.minPurchaseAmount : null,
+    amount_per_point: input.earningMode === "amount" && input.type === "points" ? input.amountPerPoint : null,
   };
 }
 
@@ -152,10 +165,12 @@ export async function issueCard(formData: FormData) {
   revalidatePath(`/dashboard/programs/${programId}`);
 }
 
-// +1 Stempel  (schreibt zusätzlich ins transactions-Journal)
+// +1 Stempel (oder nach Verdienregel via Einkaufsbetrag) - schreibt
+// zusätzlich ins transactions-Journal.
 export async function addStamp(formData: FormData) {
   const cardId = String(formData.get("cardId"));
   const programId = String(formData.get("programId"));
+  const amountRaw = formData.get("amount");
 
   const gate = await requireOrgRole("staff");
   if (!gate.ok) redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(gate.error));
@@ -164,7 +179,7 @@ export async function addStamp(formData: FormData) {
 
   const { data: card, error: fetchErr } = await supabase
     .from("cards")
-    .select("stamps, org_id, loyalty_programs(stamps_required)")
+    .select("stamps, org_id, loyalty_programs(stamps_required, earning_mode, min_purchase_amount)")
     .eq("id", cardId)
     .single();
   if (fetchErr || !card) {
@@ -174,13 +189,30 @@ export async function addStamp(formData: FormData) {
     );
   }
 
+  const p = (card as any).loyalty_programs;
+  let units = 1;
+  if (p?.earning_mode === "amount") {
+    const amount = Number(amountRaw);
+    if (!amountRaw || Number.isNaN(amount) || amount < 0) {
+      redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent("Bitte gib den Einkaufsbetrag an."));
+    }
+    const result = unitsFromAmount(
+      { type: "stamp", earning_mode: p.earning_mode, min_purchase_amount: p.min_purchase_amount, amount_per_point: null },
+      amount
+    );
+    if (result.units <= 0) {
+      redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(result.error ?? "Kein Stempel fällig."));
+    }
+    units = result.units;
+  }
+
   const cooldownError = await checkStampCooldown(supabase, cardId);
   if (cooldownError) {
     redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(cooldownError));
   }
 
-  const req = (card as any).loyalty_programs?.stamps_required ?? 10;
-  const next = Math.min((card as any).stamps + 1, req);
+  const req = p?.stamps_required ?? 10;
+  const next = Math.min((card as any).stamps + units, req);
 
   const { error: updErr } = await supabase.from("cards").update({ stamps: next }).eq("id", cardId);
   if (updErr) {
@@ -190,7 +222,8 @@ export async function addStamp(formData: FormData) {
     org_id: (card as any).org_id,
     card_id: cardId,
     type: "stamp",
-    amount: 1,
+    amount: next - (card as any).stamps,
+    note: p?.earning_mode === "amount" ? `Einkauf: ${Number(amountRaw).toFixed(2)} €` : null,
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
@@ -198,10 +231,11 @@ export async function addStamp(formData: FormData) {
   revalidatePath(`/dashboard/programs/${programId}`);
 }
 
-// +10 Punkte
+// +10 Punkte (oder nach Verdienregel via Einkaufsbetrag)
 export async function addPoints(formData: FormData) {
   const cardId = String(formData.get("cardId"));
   const programId = String(formData.get("programId"));
+  const amountRaw = formData.get("amount");
 
   const gate = await requireOrgRole("staff");
   if (!gate.ok) redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(gate.error));
@@ -210,7 +244,7 @@ export async function addPoints(formData: FormData) {
 
   const { data: card, error: fetchErr } = await supabase
     .from("cards")
-    .select("points, org_id")
+    .select("points, org_id, loyalty_programs(earning_mode, amount_per_point)")
     .eq("id", cardId)
     .single();
   if (fetchErr || !card) {
@@ -220,9 +254,26 @@ export async function addPoints(formData: FormData) {
     );
   }
 
+  const p = (card as any).loyalty_programs;
+  let units = 10;
+  if (p?.earning_mode === "amount") {
+    const amount = Number(amountRaw);
+    if (!amountRaw || Number.isNaN(amount) || amount < 0) {
+      redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent("Bitte gib den Einkaufsbetrag an."));
+    }
+    const result = unitsFromAmount(
+      { type: "points", earning_mode: p.earning_mode, min_purchase_amount: null, amount_per_point: p.amount_per_point },
+      amount
+    );
+    if (result.units <= 0) {
+      redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(result.error ?? "Keine Punkte fällig."));
+    }
+    units = result.units;
+  }
+
   const { error: updErr } = await supabase
     .from("cards")
-    .update({ points: (card as any).points + 10 })
+    .update({ points: (card as any).points + units })
     .eq("id", cardId);
   if (updErr) {
     redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(translateDbError(updErr.message)));
@@ -231,7 +282,8 @@ export async function addPoints(formData: FormData) {
     org_id: (card as any).org_id,
     card_id: cardId,
     type: "points",
-    amount: 10,
+    amount: units,
+    note: p?.earning_mode === "amount" ? `Einkauf: ${Number(amountRaw).toFixed(2)} €` : null,
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });

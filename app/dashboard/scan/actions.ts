@@ -6,6 +6,7 @@ import { translateDbError } from "@/lib/db-errors";
 import { checkStampCooldown } from "@/lib/abuse-protection";
 import { requireOrgRole } from "@/lib/org";
 import { notifyWalletsOfCardUpdate } from "@/lib/wallet-updates";
+import { unitsFromAmount } from "@/lib/earning-rules";
 
 export interface ScannedCard {
   id: string;
@@ -18,6 +19,9 @@ export interface ScannedCard {
   programTitle: string;
   customerName: string;
   ready: boolean;
+  earningMode: "manual" | "amount";
+  minPurchaseAmount: number | null;
+  amountPerPoint: number | null;
 }
 
 function serialFromScan(raw: string): string | null {
@@ -39,7 +43,9 @@ async function loadCard(cardId: string): Promise<{ error?: string; card?: Scanne
   const supabase = createClient();
   const { data: card, error } = await supabase
     .from("cards")
-    .select("id, stamps, points, customers(full_name), loyalty_programs(type, title, name, stamps_required, points_per_reward, reward_description)")
+    .select(
+      "id, stamps, points, customers(full_name), loyalty_programs(type, title, name, stamps_required, points_per_reward, reward_description, earning_mode, min_purchase_amount, amount_per_point)"
+    )
     .eq("id", cardId)
     .single();
 
@@ -61,6 +67,9 @@ async function loadCard(cardId: string): Promise<{ error?: string; card?: Scanne
       programTitle: p?.title ?? p?.name ?? "Programm",
       customerName: (card as any).customers?.full_name ?? "Kunde",
       ready,
+      earningMode: p?.earning_mode ?? "manual",
+      minPurchaseAmount: p?.min_purchase_amount ?? null,
+      amountPerPoint: p?.amount_per_point ?? null,
     },
   };
 }
@@ -79,7 +88,7 @@ export async function lookupScannedCard(rawText: string): Promise<{ error?: stri
   return loadCard(card.id);
 }
 
-export async function scanStamp(cardId: string): Promise<{ error?: string; card?: ScannedCard }> {
+export async function scanStamp(cardId: string, purchaseAmount?: number): Promise<{ error?: string; card?: ScannedCard }> {
   const gate = await requireOrgRole("staff");
   if (!gate.ok) return { error: gate.error };
 
@@ -89,13 +98,27 @@ export async function scanStamp(cardId: string): Promise<{ error?: string; card?
 
   const { data: card, error: fetchErr } = await supabase
     .from("cards")
-    .select("stamps, org_id, loyalty_programs(stamps_required)")
+    .select("stamps, org_id, loyalty_programs(stamps_required, earning_mode, min_purchase_amount)")
     .eq("id", cardId)
     .single();
   if (fetchErr || !card) return { error: "Karte nicht gefunden." };
 
-  const req = (card as any).loyalty_programs?.stamps_required ?? 10;
-  const next = Math.min(card.stamps + 1, req);
+  const p = (card as any).loyalty_programs;
+  let units = 1;
+  if (p?.earning_mode === "amount") {
+    if (purchaseAmount === undefined || Number.isNaN(purchaseAmount) || purchaseAmount < 0) {
+      return { error: "Bitte gib den Einkaufsbetrag an." };
+    }
+    const result = unitsFromAmount(
+      { type: "stamp", earning_mode: p.earning_mode, min_purchase_amount: p.min_purchase_amount, amount_per_point: null },
+      purchaseAmount
+    );
+    if (result.units <= 0) return { error: result.error ?? "Kein Stempel fällig." };
+    units = result.units;
+  }
+
+  const req = p?.stamps_required ?? 10;
+  const next = Math.min(card.stamps + units, req);
 
   const { error: updErr } = await supabase.from("cards").update({ stamps: next }).eq("id", cardId);
   if (updErr) return { error: translateDbError(updErr.message) };
@@ -104,7 +127,8 @@ export async function scanStamp(cardId: string): Promise<{ error?: string; card?
     org_id: card.org_id,
     card_id: cardId,
     type: "stamp",
-    amount: 1,
+    amount: next - card.stamps,
+    note: p?.earning_mode === "amount" ? `Einkauf: ${purchaseAmount!.toFixed(2)} €` : null,
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });
@@ -113,22 +137,41 @@ export async function scanStamp(cardId: string): Promise<{ error?: string; card?
   return loadCard(cardId);
 }
 
-export async function scanAddPoints(cardId: string): Promise<{ error?: string; card?: ScannedCard }> {
+export async function scanAddPoints(cardId: string, purchaseAmount?: number): Promise<{ error?: string; card?: ScannedCard }> {
   const gate = await requireOrgRole("staff");
   if (!gate.ok) return { error: gate.error };
 
   const supabase = createClient();
-  const { data: card, error: fetchErr } = await supabase.from("cards").select("points, org_id").eq("id", cardId).single();
+  const { data: card, error: fetchErr } = await supabase
+    .from("cards")
+    .select("points, org_id, loyalty_programs(earning_mode, amount_per_point)")
+    .eq("id", cardId)
+    .single();
   if (fetchErr || !card) return { error: "Karte nicht gefunden." };
 
-  const { error: updErr } = await supabase.from("cards").update({ points: card.points + 10 }).eq("id", cardId);
+  const p = (card as any).loyalty_programs;
+  let units = 10;
+  if (p?.earning_mode === "amount") {
+    if (purchaseAmount === undefined || Number.isNaN(purchaseAmount) || purchaseAmount < 0) {
+      return { error: "Bitte gib den Einkaufsbetrag an." };
+    }
+    const result = unitsFromAmount(
+      { type: "points", earning_mode: p.earning_mode, min_purchase_amount: null, amount_per_point: p.amount_per_point },
+      purchaseAmount
+    );
+    if (result.units <= 0) return { error: result.error ?? "Keine Punkte fällig." };
+    units = result.units;
+  }
+
+  const { error: updErr } = await supabase.from("cards").update({ points: card.points + units }).eq("id", cardId);
   if (updErr) return { error: translateDbError(updErr.message) };
 
   await supabase.from("transactions").insert({
     org_id: card.org_id,
     card_id: cardId,
     type: "points",
-    amount: 10,
+    amount: units,
+    note: p?.earning_mode === "amount" ? `Einkauf: ${purchaseAmount!.toFixed(2)} €` : null,
     staff_id: gate.user.id,
     location_id: gate.locationId,
   });

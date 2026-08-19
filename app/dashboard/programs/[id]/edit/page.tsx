@@ -31,6 +31,9 @@ export default async function EditProgramPage({ params }: { params: { id: string
     pointsPerReward: program.points_per_reward,
     rewardDescription: program.reward_description ?? "",
     design: resolveDesign(program.design),
+    earningMode: program.earning_mode === "amount" ? "amount" : "manual",
+    minPurchaseAmount: program.min_purchase_amount ?? null,
+    amountPerPoint: program.amount_per_point ?? null,
   };
 
   return (

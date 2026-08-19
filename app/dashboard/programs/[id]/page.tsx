@@ -150,19 +150,43 @@ export default async function ProgramDetail({
               </div>
               <div className="flex gap-2">
                 {isStamp ? (
-                  <form action={addStamp}>
+                  <form action={addStamp} className="flex gap-2">
                     <input type="hidden" name="cardId" value={c.id} />
                     <input type="hidden" name="programId" value={program.id} />
+                    {program.earning_mode === "amount" && (
+                      <input
+                        type="number"
+                        name="amount"
+                        step="0.01"
+                        min="0"
+                        required
+                        placeholder={`ab ${Number(program.min_purchase_amount ?? 0).toFixed(2)} €`}
+                        className="input text-sm w-32"
+                        aria-label="Einkaufsbetrag in Euro"
+                      />
+                    )}
                     <SubmitButton pendingText="…" className="btn btn-primary text-sm">
                       + Stempel
                     </SubmitButton>
                   </form>
                 ) : (
-                  <form action={addPoints}>
+                  <form action={addPoints} className="flex gap-2">
                     <input type="hidden" name="cardId" value={c.id} />
                     <input type="hidden" name="programId" value={program.id} />
+                    {program.earning_mode === "amount" && (
+                      <input
+                        type="number"
+                        name="amount"
+                        step="0.01"
+                        min="0"
+                        required
+                        placeholder={`€ / ${Number(program.amount_per_point ?? 0).toFixed(2)} = 1 Punkt`}
+                        className="input text-sm w-40"
+                        aria-label="Einkaufsbetrag in Euro"
+                      />
+                    )}
                     <SubmitButton pendingText="…" className="btn btn-primary text-sm">
-                      + 10 Punkte
+                      {program.earning_mode === "amount" ? "+ Punkte" : "+ 10 Punkte"}
                     </SubmitButton>
                   </form>
                 )}

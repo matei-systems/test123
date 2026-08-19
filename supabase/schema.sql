@@ -768,3 +768,20 @@ alter table rate_limit_events enable row level security;
 create index if not exists idx_cards_customer on cards(customer_id);
 create index if not exists idx_cards_program on cards(program_id);
 create index if not exists idx_customers_org_email on customers(org_id, email);
+
+-- ============================================================================
+--  P17: Automatische Verdienregel nach Einkaufsbetrag (statt nur manuell)
+--  - earning_mode 'manual' (Standard, bestehende Programme bleiben unverändert):
+--    Personal vergibt beim Scannen/manuell einen festen Stempel/10 Punkte.
+--  - earning_mode 'amount': Personal gibt beim Scannen den Einkaufsbetrag ein.
+--    * Stempelkarte: min_purchase_amount ist die Mindestsumme für 1 Stempel
+--      (z. B. "ab 5 € Einkauf" - Schwellenwert, kein Cent-Betrag pro Stempel).
+--    * Punktekarte: amount_per_point ist der Betrag pro 1 Punkt
+--      (z. B. amount_per_point=10 -> 1 Punkt je 10 € Einkauf, abgerundet).
+--  Bewusst als text mit App-seitiger Validierung statt neuem Postgres-Enum,
+--  analog zu campaigns.type weiter oben - kein weiterer Migrationsschritt für
+--  einen einzigen Zwei-Werte-Schalter nötig.
+-- ============================================================================
+alter table loyalty_programs add column if not exists earning_mode text not null default 'manual';
+alter table loyalty_programs add column if not exists min_purchase_amount numeric(10,2);
+alter table loyalty_programs add column if not exists amount_per_point numeric(10,2);
