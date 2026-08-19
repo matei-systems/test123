@@ -23,6 +23,10 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (e: any) {
+    // Temporär (P16-Deployment-Debugging): echte Fehlerursache in den
+    // Vercel-Runtime-Logs sichtbar machen, statt sie zu verschlucken -
+    // danach wieder auf die schlanke Fassung zurücksetzen.
+    console.error("[health] Datenbank nicht erreichbar:", e?.message, e?.cause ?? e);
     return NextResponse.json(
       { status: "error", database: "unreachable", timestamp: new Date().toISOString() },
       { status: 503 }
