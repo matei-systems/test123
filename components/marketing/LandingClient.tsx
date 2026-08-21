@@ -6,7 +6,7 @@ import WalletCard from "@/components/WalletCard";
 import ScrollNav from "@/components/marketing/ScrollNav";
 import Reveal from "@/components/marketing/Reveal";
 import LiveDemo from "@/components/marketing/LiveDemo";
-import ThemeLangProvider, { useThemeLang } from "@/components/marketing/ThemeLangProvider";
+import ThemeProvider, { useTheme } from "@/components/marketing/ThemeProvider";
 import { DEFAULT_DESIGN } from "@/lib/card-design";
 import { PLANS } from "@/lib/billing/plans";
 import { COMPANY } from "@/lib/legal/company-info";
@@ -61,7 +61,7 @@ const BENEFIT_ICONS = [
 ];
 
 function Content({ heroQr }: { heroQr: string }) {
-  const { t, lang } = useThemeLang();
+  const { t } = useTheme();
 
   const whatsappMsg = encodeURIComponent(t.whatsappText);
   const whatsapp = "https://wa.me/" + COMPANY.phone.replace(/[^\d]/g, "") + "?text=" + whatsappMsg;
@@ -115,7 +115,7 @@ function Content({ heroQr }: { heroQr: string }) {
                   stampsRequired={10}
                   points={0}
                   pointsPerReward={100}
-                  reward={lang === "de" ? "1 Gratis-Kaffee" : "1 free coffee"}
+                  reward="1 Gratis-Kaffee"
                   serial="demo"
                   qrDataUrl={heroQr}
                 />
@@ -368,8 +368,8 @@ function Content({ heroQr }: { heroQr: string }) {
 
 export default function LandingClient({ heroQr }: { heroQr: string }) {
   return (
-    <ThemeLangProvider>
+    <ThemeProvider>
       <Content heroQr={heroQr} />
-    </ThemeLangProvider>
+    </ThemeProvider>
   );
 }

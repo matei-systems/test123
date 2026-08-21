@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useThemeLang } from "@/components/marketing/ThemeLangProvider";
+import { useTheme } from "@/components/marketing/ThemeProvider";
 
 export default function ScrollNav() {
   const [scrolled, setScrolled] = useState(false);
-  const { theme, setTheme, lang, setLang, t } = useThemeLang();
+  const { theme, setTheme, t } = useTheme();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -42,35 +42,24 @@ export default function ScrollNav() {
             </a>
           </div>
 
-          <div className="flex items-center gap-1 border border-line rounded-full p-0.5">
-            <button
-              type="button"
-              onClick={() => setLang(lang === "de" ? "en" : "de")}
-              className="w-8 h-8 rounded-full grid place-items-center text-xs font-bold text-dim hover:text-gold-bright transition-colors"
-              aria-label="Sprache wechseln / Switch language"
-              title={lang === "de" ? "Switch to English" : "Auf Deutsch umschalten"}
-            >
-              {lang === "de" ? "EN" : "DE"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="w-8 h-8 rounded-full grid place-items-center text-dim hover:text-gold-bright transition-colors"
-              aria-label={theme === "dark" ? "Helles Design" : "Dunkles Design"}
-              title={theme === "dark" ? "Helles Design" : "Dunkles Design"}
-            >
-              {theme === "dark" ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                  <circle cx="12" cy="12" r="4" />
-                  <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
-                </svg>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="w-9 h-9 rounded-full border border-line grid place-items-center text-dim hover:text-gold-bright transition-colors shrink-0"
+            aria-label={theme === "dark" ? "Helles Design" : "Dunkles Design"}
+            title={theme === "dark" ? "Helles Design" : "Dunkles Design"}
+          >
+            {theme === "dark" ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
+              </svg>
+            )}
+          </button>
 
           <div className="flex items-center gap-2">
             <Link href="/login" className="btn btn-ghost text-sm">
