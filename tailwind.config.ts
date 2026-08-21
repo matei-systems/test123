@@ -1,5 +1,11 @@
 import type { Config } from "tailwindcss";
 const config: Config = {
+  // "class" statt des Standards "media": nur die Marketing-Landingpage nutzt
+  // dark: aktuell (Hell/Dunkel-Umschalter, siehe components/marketing/
+  // ThemeProvider.tsx) - der Rest der App (Dashboard, Auth) bleibt bewusst
+  // fest dunkel und verwendet dark: nirgends, ändert sich also durch diese
+  // Einstellung nicht.
+  darkMode: "class",
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {

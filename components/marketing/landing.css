@@ -1,0 +1,63 @@
+/* Hell/Dunkel-Theme NUR für die Marketing-Landingpage (Klasse .lp).
+   Bewusst als CSS-Variablen statt Tailwind dark:-Varianten an jeder
+   einzelnen Stelle - so bleiben die JSX-Klassennamen (text-dim, card,
+   btn-ghost, ...) unverändert nutzbar, nur ihre Farbwerte werden hier
+   innerhalb von .lp überschrieben. Der Rest der App (Dashboard, Auth)
+   verwendet .card/.btn-ghost/etc. außerhalb von .lp und bleibt dadurch
+   komplett unberührt. */
+.lp {
+  --lp-bg: #0b0a0d;
+  --lp-bg-2: #100e12;
+  --lp-surface: #16131a;
+  --lp-text: #f4f1ec;
+  --lp-dim: #a6a099;
+  --lp-faint: #6e685f;
+  --lp-gold: #e8b573;
+  --lp-gold-bright: #f6d19a;
+  --lp-line: rgba(255, 255, 255, 0.08);
+  --lp-line-2: rgba(255, 255, 255, 0.14);
+  --lp-rose: #fb7185;
+  --lp-rose-bg: rgba(251, 113, 133, 0.12);
+  --lp-gold-bg: rgba(232, 181, 115, 0.12);
+
+  background: var(--lp-bg);
+  color: var(--lp-text);
+}
+
+.lp[data-theme="light"] {
+  --lp-bg: #fbf8f4;
+  --lp-bg-2: #f4efe7;
+  --lp-surface: #ffffff;
+  --lp-text: #211d18;
+  --lp-dim: #6b6459;
+  --lp-faint: #948c80;
+  --lp-gold: #b5793a;
+  --lp-gold-bright: #8f5f28;
+  --lp-line: rgba(33, 29, 24, 0.1);
+  --lp-line-2: rgba(33, 29, 24, 0.16);
+  --lp-rose: #e11d48;
+  --lp-rose-bg: rgba(225, 29, 72, 0.08);
+  --lp-gold-bg: rgba(181, 121, 58, 0.1);
+}
+
+.lp .text-dim { color: var(--lp-dim); }
+.lp .text-faint { color: var(--lp-faint); }
+.lp .text-gold { color: var(--lp-gold); }
+.lp .hover\:text-gold-bright:hover { color: var(--lp-gold-bright); }
+.lp .border-line { border-color: var(--lp-line); }
+.lp .border-line-2 { border-color: var(--lp-line-2); }
+
+.lp .card {
+  background: var(--lp-surface);
+  border-color: var(--lp-line);
+}
+.lp .btn-ghost {
+  border-color: var(--lp-line-2);
+  color: var(--lp-text);
+}
+.lp .input {
+  background: var(--lp-bg);
+  border-color: var(--lp-line);
+  color: var(--lp-text);
+}
+.lp .label { color: var(--lp-dim); }
