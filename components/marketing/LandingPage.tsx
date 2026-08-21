@@ -14,6 +14,53 @@ const CHECK = (
   </svg>
 );
 
+const PROBLEMS = [
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-[22px] h-[22px]">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+        <path d="M10 17l5-5-5-5" />
+        <path d="M15 12H3" />
+      </svg>
+    ),
+    title: "Einmal da, nie wieder",
+    body: "Ohne Anreiz kommen die meisten Erstkunden kein zweites Mal – dabei ist es günstiger, bestehende Kunden zu halten, als neue zu gewinnen.",
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-[22px] h-[22px]">
+        <rect x="3" y="6" width="18" height="12" rx="2" />
+        <path d="M8 14l8-4" />
+        <path d="M8 10l8 4" />
+      </svg>
+    ),
+    title: "Papierkarten verschwinden",
+    body: "Im Portemonnaie vergessen, verknittert oder einfach verloren – meist genau bevor sie voll sind. Für dich unsichtbarer Schwund an Kundenbindung.",
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-[22px] h-[22px]">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.5 9a2.5 2.5 0 0 1 4.9.7c0 1.6-2.4 1.9-2.4 3.3" />
+        <path d="M12 17h.01" />
+      </svg>
+    ),
+    title: "Keine Daten, keine Kontrolle",
+    body: "Du weißt nicht, wer deine besten Kunden sind, wie oft sie kommen oder ob deine letzte Aktion überhaupt etwas gebracht hat.",
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-[22px] h-[22px]">
+        <rect x="7" y="2" width="10" height="20" rx="2" />
+        <path d="M11 18h2" />
+        <path d="M4.5 4.5l15 15" />
+      </svg>
+    ),
+    title: "Eine eigene App? Zu teuer, zu viel Aufwand",
+    body: "Eine App entwickeln zu lassen kostet ein Vielfaches – und kaum ein Kunde lädt sich eine eigene App für einen einzelnen Betrieb herunter.",
+  },
+];
+
 const STEPS = [
   {
     title: "QR-Aufsteller am Tresen",
@@ -156,6 +203,40 @@ export default async function LandingPage() {
           <span>Kosmetikstudios</span>
         </div>
       </div>
+
+      {/* PROBLEM */}
+      <section className="py-24">
+        <div className="max-w-[1160px] mx-auto px-6">
+          <Reveal className="text-center max-w-[640px] mx-auto mb-14">
+            <div className="text-xs font-bold tracking-[2.5px] uppercase text-[#FB7185] mb-3">Das Problem</div>
+            <h2 className="text-[28px] sm:text-[38px] tracking-[-1px] font-extrabold leading-tight mb-3.5">
+              Warum die meisten Stammkundenprogramme scheitern
+            </h2>
+            <p className="text-dim text-base sm:text-lg">Kommt dir davon etwas bekannt vor?</p>
+          </Reveal>
+          <div className="grid gap-5 sm:grid-cols-2">
+            {PROBLEMS.map((p, i) => (
+              <Reveal key={p.title} delayMs={i * 60}>
+                <div className="card p-6 flex gap-4 h-full">
+                  <div className="w-11 h-11 rounded-xl shrink-0 grid place-items-center bg-[rgba(251,113,133,0.12)] text-[#FB7185]">
+                    {p.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-[17px] tracking-[-0.2px] mb-1.5 font-semibold">{p.title}</h3>
+                    <p className="text-dim text-[14.5px]">{p.body}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal delayMs={240} className="text-center mt-12">
+            <div className="text-xs font-bold tracking-[2.5px] uppercase text-gold mb-2.5">Die Lösung</div>
+            <p className="text-xl sm:text-2xl font-bold tracking-[-0.4px] max-w-[560px] mx-auto">
+              Eine Treuekarte, die deine Kunden immer dabeihaben – im Handy, nicht im Portemonnaie.
+            </p>
+          </Reveal>
+        </div>
+      </section>
 
       {/* HOW */}
       <section className="py-24" id="how">
