@@ -10,6 +10,21 @@ interface TextItem {
 export interface Translations {
   nav: { how: string; demo: string; pricing: string; login: string; register: string };
   hero: { eyebrow: string; h1a: string; h1b: string; lead: string; ctaPrimary: string; ctaSecondary: string; note: string };
+  /** Beispielinhalte des Handy-Mockups im Hero - alles frei erfunden. */
+  heroMock: {
+    statusTime: string;
+    walletTitle: string;
+    passName: string;
+    labelBalance: string;
+    labelReward: string;
+    labelRemaining: string;
+    reward: string;
+    remaining: string;
+    bankName: string;
+    bankType: string;
+    bankNumber: string;
+    bankHolder: string;
+  };
   trust: string[];
   problem: { eyebrow: string; h2: string; sub: string; items: TextItem[]; solutionEyebrow: string; solution: string };
   how: { eyebrow: string; h2: string; sub: string; steps: TextItem[] };
@@ -56,6 +71,24 @@ export const t: Translations = {
     ctaPrimary: "14 Tage kostenlos starten",
     ctaSecondary: "Live-Demo ansehen",
     note: "Läuft in Apple Wallet & Google Wallet – schon auf jedem Handy.",
+  },
+  // Beispielbetrieb und Beispielbankkarte im Hero-Mockup: bewusst erfundene
+  // Namen ("Café Central", "Musterbank", "Max Mustermann") und keine Logos
+  // echter Banken oder Kartennetzwerke - der Mockup zeigt unser Produkt, er
+  // gibt sich nicht als Karte eines real existierenden Anbieters aus.
+  heroMock: {
+    statusTime: "9:41",
+    walletTitle: "Wallet",
+    passName: "Café Central",
+    labelBalance: "Stempel",
+    labelReward: "Belohnung",
+    labelRemaining: "Bis zur Belohnung",
+    reward: "1 Gratis-Cappuccino",
+    remaining: "noch 3",
+    bankName: "Musterbank",
+    bankType: "Debit",
+    bankNumber: "•••• 4127",
+    bankHolder: "Max Mustermann",
   },
   trust: ["Cafés", "Friseure", "Restaurants", "Bäckereien", "Kosmetikstudios"],
   problem: {

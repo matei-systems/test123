@@ -61,3 +61,46 @@
   color: var(--lp-text);
 }
 .lp .label { color: var(--lp-dim); }
+
+/* ---------------------------------------------------------------------------
+   Hero-Gerätemockup (components/marketing/PhoneMockup.tsx)
+
+   Alle Schriftgrößen darin sind in cqw angegeben - also in Prozent der Breite
+   des jeweiligen Containers (Handydisplay, Pass, Bankkarte). Nur so behält der
+   Mockup in jeder Bildschirmbreite exakt die Proportionen eines echten Passes:
+   schrumpft die Karte, schrumpft die Schrift im selben Verhältnis mit, statt
+   auf dem Handy plötzlich zu klobig zu wirken. Die jeweils VORANGEHENDE
+   px-Angabe ist der Fallback für Browser ohne Container-Queries - sie
+   überschreiben sie einfach, wenn sie die cqw-Zeile verstehen, und ignorieren
+   die cqw-Zeile andernfalls als ungültig.
+   --------------------------------------------------------------------------- */
+.lp .phone-screen { container-type: inline-size; }
+.lp .phone-time  { font-size: 12px; font-size: 3.9cqw; line-height: 1.2; }
+.lp .phone-title { font-size: 20px; font-size: 6.6cqw; line-height: 1.2; }
+.lp .phone-sicon { height: 10px;    height: 3.2cqw;    width: auto; }
+
+.lp .pass { container-type: inline-size; }
+.lp .pass-logotext { font-size: 9px;  font-size: 3.5cqw;  line-height: 1.2; }
+.lp .pass-label    { font-size: 7px;  font-size: 2.75cqw; line-height: 1.25; letter-spacing: 0.06em; }
+.lp .pass-primary  { font-size: 18px; font-size: 6.9cqw;  line-height: 1.1; letter-spacing: -0.02em; }
+.lp .pass-value    { font-size: 11px; font-size: 4cqw;    line-height: 1.25; }
+
+.lp .bankcard { container-type: inline-size; }
+.lp .bankcard-name { font-size: 9px;  font-size: 3.4cqw; line-height: 1.2; letter-spacing: 0.01em; }
+.lp .bankcard-num  { font-size: 10px; font-size: 3.9cqw; line-height: 1.2; letter-spacing: 0.14em; }
+.lp .bankcard-meta { font-size: 7px;  font-size: 2.6cqw; line-height: 1.3; letter-spacing: 0.12em; }
+
+/* Seitentasten des Gehäuses */
+.lp .phone-key {
+  background: linear-gradient(180deg, #2f2a35, #4a444f 30%, #1a171e);
+}
+
+/* Sehr dezentes Schweben - reine Deko, deshalb bei
+   prefers-reduced-motion komplett aus. */
+@keyframes lp-phone-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lp .phone-float { animation: lp-phone-float 7s ease-in-out infinite; }
+}

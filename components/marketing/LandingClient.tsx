@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { Fragment } from "react";
-import WalletCard from "@/components/WalletCard";
 import ScrollNav from "@/components/marketing/ScrollNav";
 import Reveal from "@/components/marketing/Reveal";
 import LiveDemo from "@/components/marketing/LiveDemo";
+import PhoneMockup from "@/components/marketing/PhoneMockup";
 import ThemeProvider, { useTheme } from "@/components/marketing/ThemeProvider";
-import { DEFAULT_DESIGN } from "@/lib/card-design";
 import { PLANS } from "@/lib/billing/plans";
 import { COMPANY } from "@/lib/legal/company-info";
 import "@/components/marketing/landing.css";
@@ -100,27 +99,8 @@ function Content({ heroQr }: { heroQr: string }) {
             </div>
           </div>
 
-          <div className="mx-auto min-w-0 w-full max-w-[404px]">
-            <div
-              className="relative w-full rounded-[42px] p-3 border border-line-2 shadow-[0_40px_90px_rgba(0,0,0,0.6)]"
-              style={{ background: "linear-gradient(160deg,#26222b,#141117)" }}
-            >
-              <div className="absolute top-3.5 left-1/2 -translate-x-1/2 w-[110px] h-[22px] bg-[#0B0A0D] rounded-b-2xl z-10" />
-              <div className="bg-[#0B0A0D] rounded-[32px] pt-9 px-4 pb-5 flex flex-col justify-center gap-4 overflow-x-auto">
-                <WalletCard
-                  title="Café Central"
-                  design={DEFAULT_DESIGN}
-                  type="stamp"
-                  stamps={7}
-                  stampsRequired={10}
-                  points={0}
-                  pointsPerReward={100}
-                  reward="1 Gratis-Kaffee"
-                  serial="demo"
-                  qrDataUrl={heroQr}
-                />
-              </div>
-            </div>
+          <div className="mx-auto min-w-0 w-full max-w-[360px] px-2">
+            <PhoneMockup heroQr={heroQr} />
           </div>
         </div>
       </header>
