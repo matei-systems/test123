@@ -26,8 +26,10 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             key={l.href}
             href={l.href}
             onClick={onNavigate}
-            className={`px-3 py-2.5 rounded-lg text-sm transition-colors ${
-              active ? "bg-white/[0.06] text-gold-bright" : "text-[#A6A099] hover:text-[#F4F1EC] hover:bg-white/[0.04]"
+            className={`px-3 py-2.5 rounded-lg text-sm transition-all duration-200 border-l-2 ${
+              active
+                ? "bg-white/[0.06] text-gold-bright border-gold"
+                : "border-transparent text-[#A6A099] hover:text-[#F4F1EC] hover:bg-white/[0.04] hover:translate-x-0.5"
             }`}
           >
             {l.label}

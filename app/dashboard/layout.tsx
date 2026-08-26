@@ -5,6 +5,7 @@ import { computeBillingInfo } from "@/lib/billing/access";
 import Sidebar from "@/components/dashboard/Sidebar";
 import BillingBanner from "@/components/billing/BillingBanner";
 import SuspendedBanner from "@/components/dashboard/SuspendedBanner";
+import FadeIn from "@/components/dashboard/FadeIn";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function DashboardLayout({
         ) : (
           billing && <BillingBanner billing={billing} />
         )}
-        {children}
+        <FadeIn>{children}</FadeIn>
       </main>
     </div>
   );

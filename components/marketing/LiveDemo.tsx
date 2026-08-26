@@ -6,6 +6,7 @@ import WalletCard from "@/components/WalletCard";
 import { THEMES } from "@/lib/themes";
 import { DEFAULT_DESIGN, type CardDesign, type BaseMode } from "@/lib/card-design";
 import { useTheme } from "@/components/marketing/ThemeProvider";
+import SpotlightCard from "@/components/marketing/SpotlightCard";
 
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8 MB - reine Client-Vorschau, kein Upload
 
@@ -132,7 +133,7 @@ export default function LiveDemo() {
 
   return (
     <div className="grid grid-cols-1 gap-[50px] lg:grid-cols-[1fr_340px] items-start">
-      <div className="card p-6 min-w-0">
+      <SpotlightCard className="card p-6 min-w-0">
         <h4 className="text-[13px] uppercase tracking-wide text-dim font-bold mb-5">{t.demo.panelTitle}</h4>
         <div className="mb-4">
           <label className="label">{t.demo.nameLabel}</label>
@@ -187,7 +188,7 @@ export default function LiveDemo() {
                     onClick={() => pickTheme(i)}
                     title={th.name}
                     aria-label={th.name}
-                    className={`w-9 h-9 rounded-[10px] transition-transform hover:scale-105 ${
+                    className={`w-9 h-9 rounded-[10px] transition-all duration-200 hover:scale-110 hover:shadow-lg ${
                       gradientFrom === th.from && gradientTo === th.to ? "ring-2 ring-white ring-offset-2 ring-offset-[color:var(--lp-surface)]" : ""
                     }`}
                     style={{ background: `linear-gradient(140deg, ${th.from}, ${th.to})` }}
@@ -267,11 +268,16 @@ export default function LiveDemo() {
             {uploadError}
           </div>
         )}
-      </div>
+      </SpotlightCard>
 
       <div className="lg:sticky lg:top-24 min-w-0">
         <div className="text-center text-faint text-xs tracking-wide mb-3.5">{t.demo.previewCaption.toUpperCase()}</div>
-        <div className="flex justify-center overflow-x-auto">
+        <div className="relative flex justify-center overflow-x-auto">
+          <div
+            className="pointer-events-none absolute inset-0 -z-10 blur-3xl opacity-70"
+            style={{ background: "radial-gradient(280px 220px at 50% 40%, var(--lp-gold-bg), transparent 70%)" }}
+            aria-hidden="true"
+          />
           <WalletCard
             title={name || "Dein Betrieb"}
             design={design}

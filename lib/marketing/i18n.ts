@@ -8,7 +8,7 @@ interface TextItem {
 }
 
 export interface Translations {
-  nav: { how: string; demo: string; pricing: string; login: string; register: string };
+  nav: { how: string; demo: string; pricing: string; login: string; register: string; services: string };
   hero: { eyebrow: string; h1a: string; h1b: string; lead: string; ctaPrimary: string; ctaSecondary: string; note: string };
   /** Beispielinhalte des Handy-Mockups im Hero - alles frei erfunden. */
   heroMock: {
@@ -53,6 +53,19 @@ export interface Translations {
     previewNote: string;
   };
   benefits: { eyebrow: string; h2a: string; h2b: string; items: TextItem[] };
+  /** Eigene Unterseite /dienstleistungen - bewusst zurückhaltend, Matei
+   *  Loyalty bleibt das im Vordergrund stehende Hauptprodukt. */
+  services: {
+    eyebrow: string;
+    h1: string;
+    lead: string;
+    backToLoyalty: string;
+    items: (TextItem & { tag: string })[];
+    ctaEyebrow: string;
+    ctaTitle: string;
+    ctaBody: string;
+    ctaButton: string;
+  };
   pricing: { eyebrow: string; h2: string; sub: string; popular: string; perMonth: string; cta: string; question: string; questionLink: string };
   cta: { h2: string; sub: string; primary: string; whatsapp: string };
   footer: { impressum: string; datenschutz: string; agb: string };
@@ -62,7 +75,14 @@ export interface Translations {
 }
 
 export const t: Translations = {
-  nav: { how: "So funktioniert's", demo: "Live-Demo", pricing: "Preise", login: "Anmelden", register: "Registrieren" },
+  nav: {
+    how: "So funktioniert's",
+    demo: "Live-Demo",
+    pricing: "Preise",
+    login: "Anmelden",
+    register: "Registrieren",
+    services: "Weitere Dienstleistungen",
+  },
   hero: {
     eyebrow: "Digitale Treuekarte",
     h1a: "Aus Laufkundschaft werden",
@@ -148,6 +168,39 @@ export const t: Translations = {
       { title: "Kunden kommen öfter", body: "Ein Ziel vor Augen bringt Gäste zurück – für den nächsten Stempel und die nächste Belohnung." },
       { title: "Immer aktuell", body: "Neuer Stempel, neue Belohnung, neue Aktion – die Karte im Handy aktualisiert sich von selbst." },
     ],
+  },
+  services: {
+    eyebrow: "Auch von uns",
+    h1: "Digitale Dienstleistungen von Matei Systems",
+    lead:
+      "Matei Loyalty ist unser Hauptprodukt - daneben entwickeln wir für Betriebe auch individuelle digitale Lösungen, von der Website bis zur KI-gestützten Automatisierung.",
+    backToLoyalty: "Zurück zu Matei Loyalty",
+    items: [
+      {
+        tag: "Websites",
+        title: "Webseiten & Onlineshops",
+        body: "Individuell gestaltete, schnelle Webseiten und Onlineshops - von der ersten Idee bis zum fertigen, gepflegten System.",
+      },
+      {
+        tag: "KI-Chatbots",
+        title: "KI-Chatbots für WhatsApp, Instagram & Web",
+        body: "Automatisierte Kundenkommunikation, die rund um die Uhr antwortet - eingebunden in WhatsApp, Instagram oder direkt auf deiner Webseite.",
+      },
+      {
+        tag: "KI-Telefonassistent",
+        title: "KI-Telefonassistent in Echtzeit",
+        body: "Ein digitaler Assistent, der Anrufe entgegennimmt, Fragen beantwortet und Termine vereinbart - in natürlicher, echtzeitfähiger Sprache.",
+      },
+      {
+        tag: "Automatisierung",
+        title: "Automatisierung & Skalierung",
+        body: "Wir automatisieren wiederkehrende Abläufe in deinem Unternehmen und bauen digitale Prozesse, die mit dir mitwachsen.",
+      },
+    ],
+    ctaEyebrow: "Interesse?",
+    ctaTitle: "Lass uns über dein Projekt sprechen",
+    ctaBody: "Schreib uns kurz, worum es geht - wir melden uns zeitnah zurück.",
+    ctaButton: "WhatsApp schreiben",
   },
   pricing: {
     eyebrow: "Preise",

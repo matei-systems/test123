@@ -104,3 +104,105 @@
 @media (prefers-reduced-motion: no-preference) {
   .lp .phone-float { animation: lp-phone-float 7s ease-in-out infinite; }
 }
+
+/* ---------------------------------------------------------------------------
+   Animations-Baukasten - gemeinsam von Landingpage und /dienstleistungen
+   genutzt. Alles hier respektiert prefers-reduced-motion: reduce, indem die
+   jeweilige @keyframes-Animation nur unter (no-preference) aktiviert wird -
+   der Endzustand (volle Deckkraft, keine Verschiebung) bleibt so ohne
+   Animation direkt sichtbar, nichts bleibt unsichtbar/halb-transformiert.
+   --------------------------------------------------------------------------- */
+
+/* Cursor-Lichtschein auf Karten (SpotlightCard.tsx setzt --mx/--my per JS) */
+.lp .lp-spotlight { position: relative; overflow: hidden; isolation: isolate; }
+.lp .lp-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), var(--lp-gold-bg), transparent 65%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.lp .lp-spotlight:hover::before { opacity: 1; }
+.lp .lp-spotlight > * { position: relative; z-index: 1; }
+@media (hover: none) {
+  .lp .lp-spotlight::before { display: none; }
+}
+
+/* Langsam wandernde Aurora-Blobs hinter dem Hero */
+@keyframes lp-aurora-a {
+  0%, 100% { transform: translate(-50%, -10%) scale(1); }
+  50%      { transform: translate(-46%, -4%) scale(1.08); }
+}
+@keyframes lp-aurora-b {
+  0%, 100% { transform: translate(-50%, 0%) scale(1); opacity: 0.7; }
+  50%      { transform: translate(-54%, 6%) scale(0.94); opacity: 0.9; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lp .lp-aurora-a { animation: lp-aurora-a 16s ease-in-out infinite; }
+  .lp .lp-aurora-b { animation: lp-aurora-b 20s ease-in-out infinite; }
+}
+
+/* Endlos scrollende Trust-Bar (zwei identische Kopien nebeneinander,
+   die zusammen um exakt eine Kopiebreite verschoben werden -> nahtlose
+   Schleife). Bei reduced-motion bleibt die Liste einfach statisch stehen,
+   dafür überschreibt landing.css dann nichts weiter - der Flex-Wrap in
+   LandingClient greift automatisch als Fallback-Layout. */
+.lp .lp-marquee-track { animation: lp-marquee 34s linear infinite; }
+.lp .lp-marquee-track:hover { animation-play-state: paused; }
+@keyframes lp-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp .lp-marquee-track { animation: none; }
+}
+
+/* Aktive Nav-Sektion: wachsender Unterstrich statt hartem Farbsprung */
+.lp .lp-nav-link { position: relative; }
+.lp .lp-nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -4px;
+  height: 1.5px;
+  background: var(--lp-gold);
+  transition: right 0.3s ease;
+}
+.lp .lp-nav-link[data-active="true"]::after,
+.lp .lp-nav-link:hover::after { right: 0; }
+
+/* Sehr feines Korn über der ganzen Seite - reine Textur, macht den
+   flächigen dunklen Hintergrund taktiler/hochwertiger. Als fixed Overlay
+   mit mix-blend-mode statt pro Sektion, damit es exakt einmal existiert. */
+.lp-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Sanftes Aufsetzen für Buttons - etwas mehr Tiefe als der App-weite .btn:active */
+.lp .btn { transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease; }
+
+/* Etwas mehr Tiefe beim Hover als das App-weite .card-hover (das nur die
+   Randfarbe/Position ändert) - nur innerhalb der Marketing-Seite, damit
+   Dashboard/Admin (die dieselbe .card-hover-Klasse nutzen) unverändert
+   bleiben. */
+.lp .card-hover:hover { box-shadow: 0 22px 50px -26px rgba(0, 0, 0, 0.55); }
+.lp[data-theme="light"] .card-hover:hover { box-shadow: 0 22px 50px -30px rgba(33, 29, 24, 0.22); }
+
+/* Logo im Nav: leichtes Aufleuchten beim Hover */
+.lp .lp-logo-mark { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.lp a:hover .lp-logo-mark { transform: scale(1.06) rotate(-3deg); }
+
+html.lp-smooth { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html.lp-smooth { scroll-behavior: auto; }
+}

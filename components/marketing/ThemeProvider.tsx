@@ -44,9 +44,19 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     } catch {}
   }
 
+  // Sanftes Scrollen zu Sektions-Ankern (#how, #demo, ...) - nur auf dieser
+  // Seite, deshalb hier statt global in app/globals.css gesetzt. Die Regel
+  // selbst schaltet sich bei prefers-reduced-motion:reduce automatisch ab
+  // (siehe landing.css), das <html>-Attribut muss dafür nicht entfernt werden.
+  useEffect(() => {
+    document.documentElement.classList.add("lp-smooth");
+    return () => document.documentElement.classList.remove("lp-smooth");
+  }, []);
+
   return (
     <ThemeContext.Provider value={{ theme, setTheme, t }}>
       <div className="lp" data-theme={theme}>
+        <div className="lp-grain" aria-hidden="true" />
         {children}
       </div>
     </ThemeContext.Provider>

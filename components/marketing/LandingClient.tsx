@@ -6,6 +6,8 @@ import ScrollNav from "@/components/marketing/ScrollNav";
 import Reveal from "@/components/marketing/Reveal";
 import LiveDemo from "@/components/marketing/LiveDemo";
 import PhoneMockup from "@/components/marketing/PhoneMockup";
+import Magnetic from "@/components/marketing/Magnetic";
+import SpotlightCard from "@/components/marketing/SpotlightCard";
 import ThemeProvider, { useTheme } from "@/components/marketing/ThemeProvider";
 import { PLANS } from "@/lib/billing/plans";
 import { COMPANY } from "@/lib/legal/company-info";
@@ -74,45 +76,67 @@ function Content({ heroQr }: { heroQr: string }) {
       {/* HERO */}
       <header className="relative pt-[150px] pb-[90px] overflow-hidden">
         <div
-          className="pointer-events-none absolute -top-[10%] left-1/2 -translate-x-1/2 w-[900px] h-[700px] rounded-full"
+          className="pointer-events-none absolute -top-[10%] left-1/2 -translate-x-1/2 w-[900px] h-[700px] rounded-full lp-aurora-a"
           style={{ background: "radial-gradient(closest-side, var(--lp-gold-bg), transparent 70%)" }}
+        />
+        <div
+          className="pointer-events-none absolute -top-[4%] left-1/2 -translate-x-1/2 w-[640px] h-[520px] rounded-full lp-aurora-b"
+          style={{ background: "radial-gradient(closest-side, var(--lp-rose-bg), transparent 72%)" }}
         />
         <div className="max-w-[1160px] mx-auto px-6 relative grid grid-cols-1 gap-14 items-center lg:grid-cols-[1.05fr_0.95fr]">
           <div className="min-w-0">
-            <div className="text-xs font-bold tracking-[2.5px] uppercase text-gold">{t.hero.eyebrow}</div>
-            <h1 className="text-[38px] sm:text-[52px] lg:text-[62px] leading-[1.03] tracking-[-1.8px] font-extrabold mt-5 mb-5">
-              {t.hero.h1a}{" "}
-              <span className="bg-gold-grad bg-clip-text text-transparent">{t.hero.h1b}</span>
-            </h1>
-            <p className="text-base sm:text-lg text-dim max-w-[520px] mb-8">{t.hero.lead}</p>
-            <div className="flex gap-3.5 flex-wrap">
-              <Link href="/register" className="btn btn-primary">
-                {t.hero.ctaPrimary}
-              </Link>
-              <a href="#demo" className="btn btn-ghost">
-                {t.hero.ctaSecondary}
-              </a>
-            </div>
-            <div className="mt-5 text-[13px] text-faint flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#4ade80] shrink-0" />
-              {t.hero.note}
-            </div>
+            <Reveal variant="up">
+              <div className="text-xs font-bold tracking-[2.5px] uppercase text-gold">{t.hero.eyebrow}</div>
+            </Reveal>
+            <Reveal variant="up" delayMs={80}>
+              <h1 className="text-[38px] sm:text-[52px] lg:text-[62px] leading-[1.03] tracking-[-1.8px] font-extrabold mt-5 mb-5">
+                {t.hero.h1a}{" "}
+                <span className="bg-gold-grad bg-clip-text text-transparent">{t.hero.h1b}</span>
+              </h1>
+            </Reveal>
+            <Reveal variant="up" delayMs={160}>
+              <p className="text-base sm:text-lg text-dim max-w-[520px] mb-8">{t.hero.lead}</p>
+            </Reveal>
+            <Reveal variant="up" delayMs={240}>
+              <div className="flex gap-3.5 flex-wrap">
+                <Magnetic>
+                  <Link href="/register" className="btn btn-primary">
+                    {t.hero.ctaPrimary}
+                  </Link>
+                </Magnetic>
+                <Magnetic strength={7}>
+                  <a href="#demo" className="btn btn-ghost">
+                    {t.hero.ctaSecondary}
+                  </a>
+                </Magnetic>
+              </div>
+            </Reveal>
+            <Reveal variant="up" delayMs={300}>
+              <div className="mt-5 text-[13px] text-faint flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#4ade80] shrink-0" />
+                {t.hero.note}
+              </div>
+            </Reveal>
           </div>
 
-          <div className="mx-auto min-w-0 w-full max-w-[360px] px-2">
+          <Reveal variant="scale" delayMs={120} className="mx-auto min-w-0 w-full max-w-[360px] px-2">
             <PhoneMockup heroQr={heroQr} />
-          </div>
+          </Reveal>
         </div>
       </header>
 
       {/* TRUST */}
-      <div className="py-6 border-t border-b border-line">
-        <div className="max-w-[1160px] mx-auto px-6 flex items-center justify-center gap-9 flex-wrap text-faint text-sm font-semibold tracking-wide">
-          {t.trust.map((item, i) => (
-            <Fragment key={item}>
-              {i > 0 && <span>·</span>}
-              <span>{item}</span>
-            </Fragment>
+      <div className="py-6 border-t border-b border-line overflow-hidden">
+        <div className="lp-marquee-track flex w-max items-center gap-9 text-faint text-sm font-semibold tracking-wide">
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex items-center gap-9 shrink-0" aria-hidden={copy === 1}>
+              {t.trust.map((item, i) => (
+                <Fragment key={item}>
+                  {i > 0 && <span>·</span>}
+                  <span>{item}</span>
+                </Fragment>
+              ))}
+            </div>
           ))}
         </div>
       </div>
@@ -130,7 +154,7 @@ function Content({ heroQr }: { heroQr: string }) {
           <div className="grid gap-5 sm:grid-cols-2">
             {t.problem.items.map((p, i) => (
               <Reveal key={p.title} delayMs={i * 60}>
-                <div className="card p-6 flex gap-4 h-full">
+                <SpotlightCard className="card card-hover p-6 flex gap-4 h-full">
                   <div
                     className="w-11 h-11 rounded-xl shrink-0 grid place-items-center"
                     style={{ background: "var(--lp-rose-bg)", color: "var(--lp-rose)" }}
@@ -141,7 +165,7 @@ function Content({ heroQr }: { heroQr: string }) {
                     <h3 className="text-[17px] tracking-[-0.2px] mb-1.5 font-semibold">{p.title}</h3>
                     <p className="text-dim text-[14.5px]">{p.body}</p>
                   </div>
-                </div>
+                </SpotlightCard>
               </Reveal>
             ))}
           </div>
@@ -163,7 +187,7 @@ function Content({ heroQr }: { heroQr: string }) {
           <div className="grid gap-5 md:grid-cols-3">
             {t.how.steps.map((s, i) => (
               <Reveal key={s.title} delayMs={i * 80}>
-                <div className="card p-7 h-full">
+                <SpotlightCard className="card card-hover p-7 h-full">
                   <div
                     className="w-[38px] h-[38px] rounded-[11px] text-gold grid place-items-center font-extrabold text-[17px] mb-4.5"
                     style={{ background: "var(--lp-gold-bg)" }}
@@ -172,7 +196,7 @@ function Content({ heroQr }: { heroQr: string }) {
                   </div>
                   <h3 className="text-lg tracking-[-0.3px] mb-2 font-semibold">{s.title}</h3>
                   <p className="text-dim text-[15px]">{s.body}</p>
-                </div>
+                </SpotlightCard>
               </Reveal>
             ))}
           </div>
@@ -211,7 +235,7 @@ function Content({ heroQr }: { heroQr: string }) {
           <div className="grid gap-5 sm:grid-cols-2">
             {t.benefits.items.map((b, i) => (
               <Reveal key={b.title} delayMs={i * 60}>
-                <div className="card p-6 flex gap-4">
+                <SpotlightCard className="card card-hover p-6 flex gap-4">
                   <div
                     className="w-11 h-11 rounded-xl shrink-0 grid place-items-center text-gold"
                     style={{ background: "var(--lp-gold-bg)" }}
@@ -222,7 +246,7 @@ function Content({ heroQr }: { heroQr: string }) {
                     <h3 className="text-[17px] tracking-[-0.2px] mb-1.5 font-semibold">{b.title}</h3>
                     <p className="text-dim text-[14.5px]">{b.body}</p>
                   </div>
-                </div>
+                </SpotlightCard>
               </Reveal>
             ))}
           </div>
@@ -242,13 +266,14 @@ function Content({ heroQr }: { heroQr: string }) {
               const featured = plan.id === "business";
               return (
                 <Reveal key={plan.id} delayMs={i * 80}>
-                  <div
-                    className="relative rounded-[18px] border p-8 h-full flex flex-col"
+                  <SpotlightCard
+                    className="relative rounded-[18px] border p-8 h-full flex flex-col transition-transform duration-300 hover:-translate-y-1.5"
                     style={{
                       borderColor: featured ? "rgba(232,181,115,0.5)" : "var(--lp-line)",
                       background: featured
                         ? "linear-gradient(180deg, var(--lp-gold-bg), var(--lp-surface))"
                         : "var(--lp-surface)",
+                      boxShadow: featured ? "0 20px 60px -20px rgba(219,159,82,0.35)" : undefined,
                     }}
                   >
                     {featured && (
@@ -272,7 +297,7 @@ function Content({ heroQr }: { heroQr: string }) {
                     <Link href="/register" className={`btn ${featured ? "btn-primary" : "btn-ghost"} w-full`}>
                       {t.pricing.cta}
                     </Link>
-                  </div>
+                  </SpotlightCard>
                 </Reveal>
               );
             })}
@@ -291,7 +316,7 @@ function Content({ heroQr }: { heroQr: string }) {
       <section className="py-24">
         <div className="max-w-[1160px] mx-auto px-6">
           <Reveal>
-            <div
+            <SpotlightCard
               className="rounded-[26px] border border-line-2 py-16 px-8 text-center"
               style={{
                 background:
@@ -301,14 +326,18 @@ function Content({ heroQr }: { heroQr: string }) {
               <h2 className="text-[28px] sm:text-[40px] tracking-[-1.2px] font-extrabold mb-4">{t.cta.h2}</h2>
               <p className="text-dim text-lg max-w-[520px] mx-auto mb-7">{t.cta.sub}</p>
               <div className="flex gap-3.5 justify-center flex-wrap">
-                <Link href="/register" className="btn btn-primary">
-                  {t.cta.primary}
-                </Link>
-                <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
-                  {t.cta.whatsapp}
-                </a>
+                <Magnetic>
+                  <Link href="/register" className="btn btn-primary">
+                    {t.cta.primary}
+                  </Link>
+                </Magnetic>
+                <Magnetic strength={7}>
+                  <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
+                    {t.cta.whatsapp}
+                  </a>
+                </Magnetic>
               </div>
-            </div>
+            </SpotlightCard>
           </Reveal>
         </div>
       </section>
@@ -335,6 +364,9 @@ function Content({ heroQr }: { heroQr: string }) {
             </Link>
             <Link href="/agb" className="hover:text-gold-bright">
               {t.footer.agb}
+            </Link>
+            <Link href="/dienstleistungen" className="hover:text-dim">
+              {t.nav.services}
             </Link>
           </div>
           <div>
