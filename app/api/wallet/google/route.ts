@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
     programId: p.id as string,
     serial: (card as any).serial_number as string,
     orgName,
+    programTitle: p.title ?? p.name ?? "Treuekarte",
     rewardDescription: p.reward_description ?? "",
     type: p.type as "stamp" | "points",
     stamps: (card as any).stamps as number,

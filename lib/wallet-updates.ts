@@ -30,6 +30,7 @@ async function loadWalletCardInput(cardId: string): Promise<{ input: GoogleObjec
     programId: (card as any).program_id,
     serial: (card as any).serial_number,
     orgName: (card as any).organizations?.name ?? p?.title ?? "Matei Loyalty",
+    programTitle: p?.title ?? p?.name ?? "Treuekarte",
     rewardDescription: p?.reward_description ?? "",
     type: p?.type ?? "stamp",
     stamps: (card as any).stamps,

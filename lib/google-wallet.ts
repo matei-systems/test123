@@ -125,6 +125,7 @@ export interface GoogleObjectInput {
   programId: string;
   serial: string;
   orgName: string;
+  programTitle: string;
   rewardDescription: string;
   type: "stamp" | "points";
   stamps: number;
@@ -224,7 +225,7 @@ export function buildGoogleWalletSaveUrl(input: GoogleObjectInput): string | nul
   const loyaltyClass = {
     id: googleClassId(input.programId),
     issuerName: input.orgName,
-    programName: input.orgName,
+    programName: input.programTitle,
     reviewStatus: "UNDER_REVIEW",
     ...(input.logoUrl
       ? { programLogo: { sourceUri: { uri: input.logoUrl }, contentDescription: { defaultValue: { language: "de", value: "Logo" } } } }
