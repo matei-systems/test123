@@ -69,10 +69,10 @@ export default function SuspendControl({
 
   if (suspended) {
     return (
-      <div className="card p-5 mb-6" style={{ borderColor: "rgba(239,68,68,0.35)" }}>
+      <div className="card p-5 mb-6" style={{ borderColor: "rgb(var(--danger) / 0.35)" }}>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <div className="text-sm font-semibold text-[#FCA5A5] mb-1">Dieser Betrieb ist gesperrt</div>
+            <div className="text-sm font-semibold text-danger mb-1">Dieser Betrieb ist gesperrt</div>
             <div className="text-sm text-dim">{reason || "Kein Grund hinterlegt."}</div>
           </div>
           {isSuperadmin && (
@@ -85,7 +85,7 @@ export default function SuspendControl({
           )}
         </div>
         {error && (
-          <div className="mt-3 text-sm rounded-lg px-3 py-2" style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+          <div className="mt-3 text-sm rounded-lg px-3 py-2" style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))" }}>
             {error}
           </div>
         )}
@@ -115,7 +115,7 @@ export default function SuspendControl({
           {pending ? "Wird gesperrt…" : "Betrieb sperren"}
         </button>
         {error && (
-          <div className="mt-2 text-sm rounded-lg px-3 py-2" style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+          <div className="mt-2 text-sm rounded-lg px-3 py-2" style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))" }}>
             {error}
           </div>
         )}

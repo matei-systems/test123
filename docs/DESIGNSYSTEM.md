@@ -47,11 +47,29 @@ Ticket-Kante, runder Text-Stempel („Treue zahlt sich aus").
 4-px-Grundraster, Abschnittsabstand 96 px Desktop / 64 px mobil, Karten 20 px Radius, Buttons und Chips
 vollständig abgerundet, Touch-Flächen mindestens 44 px.
 
-## Komponenten (`components/ui/`)
+## Umsetzung im Code
 
-Button (primär/sekundär/Akzent/Ghost), Karte, Status-Badge (freigeschaltet/in Prüfung/abgelehnt/pausiert),
-Kategorie-Chip, Belohnungs-Ticket mit gestrichelter Kante, Stempelraster, Logo mit Stempelzeichen,
-Text-Stempel, Leer-/Fehler-/Ladezustände.
+- **Tokens:** `app/globals.css` (`:root` hell, `.dark` dunkel) und `tailwind.config.ts` (`paper`, `surface`, `fg`, `muted`,
+  `faint`, `accent`, `accent-strong`, `stamp`, `forest`, `danger`, `warn`, `info`, `line`). Frühere Namen (`ink`, `dim`,
+  `gold` …) sind Aliase auf dieselben Rollen, dadurch folgt die gesamte bestehende App dem neuen Design.
+- **Klassen:** `.btn` (`-primary`, `-dark`, `-forest`, `-ghost`, `-soft`, `-danger`, `-sm`, `-lg`), `.card`, `.card-flat`,
+  `.chip`, `.badge-*`, `.ticket` (Belohnungs-Ticket mit Stanzkante), `.input`/`.label`/`.hint`, `.eyebrow`, `.skeleton`.
+- **Komponenten:** `components/ui/Logo.tsx` (Stempel-Logo + Wortmarke), `ThemeToggle`, `useColorScheme`;
+  `components/site/Illustrations.tsx` (Text-Stempel, Handy-Stempelkarte, Wallet-Liste, Ring-Schritte);
+  `components/konto/WalletCardView.tsx` (Stempelraster, Fortschritt, Kartenkopf im Design des Geschäfts).
+
+## Wo welcher Canva-Entwurf umgesetzt ist
+
+| Canva-Entwurf | Umsetzung |
+|---|---|
+| Markenleitfaden | Farben, Schriften, Abstände, Logo, Text-Stempel, Ticket-Kante (siehe oben) |
+| Website / Landingpage | `app/page.tsx`: Leitsatz-Hero mit zwei Einstiegen, Handy mit Stempelkarte, Ring-Schritte, Vorteile, ehrlicher Partner-Platzhalter, FAQ, dunkle Abschlussfläche |
+| App-Screens | Wallet-Liste + Tab-Leiste (`/konto`), Kartendetail mit Stempelraster, QR-Feld und Belohnungs-Tickets (`/konto/karten/[id]`), Geschäfte entdecken mit Suche, Chips und Ortsauswahl (`/geschaefte`), Scanner mit grünem Kopf und „+1 Stempel“ (`/dashboard/scan`), Geschäftsübersicht mit Prüfstatus und Schnellzugriffen (`/dashboard`) |
+| Tresen-Aufsteller (A5) | Druckvorlage `/poster/[programId]` mit echtem Beitritts-QR, Text-Stempel und drei Schritten |
+
+Bewusste Abweichungen: Die Kennzahlen im Canva-Screen „Geschäftsübersicht“ waren Beispielwerte; im Dashboard stehen
+ausschließlich echte Zahlen aus der Datenbank (bei fehlenden Daten ein leerer Zustand). Die Beispielkarte auf der
+Startseite ist sichtbar als „Beispiel“ gekennzeichnet.
 
 ## Barrierefreiheit
 

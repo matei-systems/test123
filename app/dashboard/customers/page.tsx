@@ -19,7 +19,7 @@ export default async function CustomersPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight mb-1">Kunden</h1>
-      <p className="text-[#A6A099] text-sm mb-6">Alle Endkunden deines Betriebs</p>
+      <p className="text-muted text-sm mb-6">Alle Endkunden deines Betriebs</p>
       <CustomerList customers={(customers as any) ?? []} />
     </div>
   );

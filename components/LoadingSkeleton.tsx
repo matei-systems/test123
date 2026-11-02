@@ -4,7 +4,7 @@
 // Admin-Bereich ab (Titelzeile, Kennzahlen-Kacheln, Tabelle), statt für
 // jede einzelne Seite ein eigenes Skelett zu bauen.
 function Bar({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-white/[0.06] ${className}`} />;
+  return <div className={`animate-pulse rounded-md bg-fg/[0.06] ${className}`} />;
 }
 
 export function HeaderSkeleton() {
@@ -33,7 +33,7 @@ export function TableSkeleton({ rows = 6 }: { rows?: number }) {
   return (
     <div className="card overflow-hidden">
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="p-4 border-b border-white/[0.06] last:border-b-0 flex items-center gap-4">
+        <div key={i} className="p-4 border-b border-line last:border-b-0 flex items-center gap-4">
           <Bar className="h-4 flex-1 max-w-[220px]" />
           <Bar className="h-4 w-20" />
           <Bar className="h-4 w-24 ml-auto" />

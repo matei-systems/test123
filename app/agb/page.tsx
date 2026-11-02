@@ -1,7 +1,7 @@
 import LegalLayout from "@/components/legal/LegalLayout";
 import { COMPANY, LEGAL_LAST_UPDATED } from "@/lib/legal/company-info";
 
-export const metadata = { title: "AGB – Matei Loyalty" };
+export const metadata = { title: "AGB" };
 
 export default function AgbPage() {
   return (
@@ -97,6 +97,20 @@ export default function AgbPage() {
           vertragstypischen Schaden. Im Übrigen ist die Haftung ausgeschlossen. Für Datenverlust haften wir
           nur, soweit dieser durch zumutbare, regelmäßige Datensicherung durch den Kunden vermeidbar gewesen
           wäre.
+        </p>
+      </section>
+
+      <section>
+        <h2>9a. Kundenkonten für Endkundinnen und Endkunden</h2>
+        <p>
+          Endkundinnen und Endkunden können ein kostenloses Kundenkonto anlegen, um Treuekarten teilnehmender
+          Geschäfte zu verwalten. Für diese Nutzung gilt: Das Konto ist kostenlos; Stempel und Punkte werden
+          ausschließlich von dem jeweiligen Geschäft vergeben und sind nur dort einlösbar, nicht übertragbar und
+          ohne Barwert. Belohnungen, ihre Bedingungen und Gültigkeit legt das jeweilige Geschäft fest, das auch
+          allein für die Gewährung der Belohnung verantwortlich ist; Matei Systems stellt die technische
+          Plattform bereit. Einlöse-Codes sind 10 Minuten gültig und nur einmal verwendbar. Das Kundenkonto kann
+          jederzeit im Profil gelöscht werden. Bei Missbrauch (z. B. Manipulationsversuchen) können wir ein
+          Konto sperren.
         </p>
       </section>
 

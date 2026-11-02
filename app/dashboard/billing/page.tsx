@@ -20,11 +20,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, { bg: string; fg: string }> = {
-  trialing: { bg: "rgba(232,181,115,0.14)", fg: "#E8B573" },
-  active: { bg: "rgba(74,222,128,0.12)", fg: "#86EFAC" },
-  past_due: { bg: "rgba(239,68,68,0.12)", fg: "#FCA5A5" },
-  unpaid: { bg: "rgba(239,68,68,0.12)", fg: "#FCA5A5" },
-  canceled: { bg: "rgba(148,148,148,0.14)", fg: "#C9C4BC" },
+  trialing: { bg: "rgb(var(--accent-strong) / 0.14)", fg: "rgb(var(--accent))" },
+  active: { bg: "rgb(var(--forest) / 0.12)", fg: "rgb(var(--forest))" },
+  past_due: { bg: "rgb(var(--danger) / 0.1)", fg: "rgb(var(--danger))" },
+  unpaid: { bg: "rgb(var(--danger) / 0.1)", fg: "rgb(var(--danger))" },
+  canceled: { bg: "rgb(var(--fg) / 0.06)", fg: "rgb(var(--muted))" },
 };
 
 function fmtDate(d: Date | null): string {
@@ -65,24 +65,24 @@ export default async function BillingPage({ searchParams }: { searchParams: { ch
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight mb-1">Abrechnung</h1>
-        <p className="text-[#A6A099] text-sm">Tarif, Testphase und Rechnungen deines Betriebs</p>
+        <p className="text-muted text-sm">Tarif, Testphase und Rechnungen deines Betriebs</p>
       </div>
 
       {searchParams?.checkout === "success" && (
-        <div className="mb-5 text-sm rounded-lg px-3 py-2.5" style={{ background: "rgba(74,222,128,0.1)", color: "#86EFAC" }}>
+        <div className="mb-5 text-sm rounded-lg px-3 py-2.5" style={{ background: "rgb(var(--forest) / 0.1)", color: "rgb(var(--forest))" }}>
           Danke! Dein Abo wird in Kürze aktiviert.
         </div>
       )}
 
       {!stripeConfigured && (
-        <div className="mb-5 text-sm rounded-lg px-3 py-2.5" style={{ background: "rgba(232,181,115,0.12)", color: "#E8B573" }}>
+        <div className="mb-5 text-sm rounded-lg px-3 py-2.5" style={{ background: "rgb(var(--accent-strong) / 0.1)", color: "rgb(var(--accent))" }}>
           Zahlungen sind noch nicht eingerichtet - die Tarife sind bereits vollständig vorbereitet und werden automatisch aktiv,
           sobald ein Stripe-Konto hinterlegt ist.
         </div>
       )}
 
       {billing.state === "restricted" && (
-        <div className="mb-5 text-sm rounded-lg px-3 py-2.5" style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+        <div className="mb-5 text-sm rounded-lg px-3 py-2.5" style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))" }}>
           {ACCESS_REASON_MESSAGE[billing.reason]}
         </div>
       )}
@@ -101,7 +101,7 @@ export default async function BillingPage({ searchParams }: { searchParams: { ch
           <div className="text-right text-sm text-faint">
             {billing.reason === "trialing_app" || billing.reason === "trialing_stripe" ? (
               <div>
-                Testphase endet am <span className="text-[#F4F1EC] font-medium">{fmtDate(billing.trialEndsAt)}</span>
+                Testphase endet am <span className="text-fg font-medium">{fmtDate(billing.trialEndsAt)}</span>
                 {billing.daysLeftInTrial !== null && billing.daysLeftInTrial >= 0 && (
                   <span> ({billing.daysLeftInTrial} {billing.daysLeftInTrial === 1 ? "Tag" : "Tage"})</span>
                 )}
@@ -109,7 +109,7 @@ export default async function BillingPage({ searchParams }: { searchParams: { ch
             ) : billing.currentPeriodEnd ? (
               <div>
                 {billing.cancelAtPeriodEnd ? "Endet am " : "Nächste Abrechnung am "}
-                <span className="text-[#F4F1EC] font-medium">{fmtDate(billing.currentPeriodEnd)}</span>
+                <span className="text-fg font-medium">{fmtDate(billing.currentPeriodEnd)}</span>
               </div>
             ) : null}
           </div>
@@ -142,7 +142,7 @@ export default async function BillingPage({ searchParams }: { searchParams: { ch
             <table className="w-full text-sm">
               <tbody>
                 {invoices.map((inv) => (
-                  <tr key={inv.id} className="border-b border-white/[0.06] last:border-b-0">
+                  <tr key={inv.id} className="border-b border-line last:border-b-0">
                     <td className="p-4 text-faint">{fmtDate(inv.date)}</td>
                     <td className="p-4 font-medium">{inv.amount}</td>
                     <td className="p-4 text-faint capitalize">{inv.status}</td>

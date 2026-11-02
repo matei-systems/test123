@@ -27,19 +27,24 @@ export default function JoinForm({ programId }: { programId: string }) {
   }
 
   return (
-    <form onSubmit={submit} className="bg-auth-surface border border-line rounded-2xl p-6">
+    <form onSubmit={submit} className="card p-6">
+      <h2 className="font-display text-xl font-semibold mb-1">Ohne Konto</h2>
+      <p className="text-sm text-muted mb-5">Die Karte öffnet sich über ihren Link. Speichere ihn dir oder verknüpfe sie später mit einem Konto.</p>
       <ErrorMessage>{error}</ErrorMessage>
       <Field
         label="Dein Name"
         value={fullName}
         onChange={(e) => setFullName(e.target.value)}
+        name="fullName"
         required
-        autoFocus
+        autoComplete="name"
         placeholder="Vorname Nachname"
       />
       <Field
         label="E-Mail (optional)"
         type="email"
+        name="email"
+        autoComplete="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="du@beispiel.at"
@@ -58,9 +63,9 @@ export default function JoinForm({ programId }: { programId: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-[15px] font-semibold bg-gold-grad text-[#241a0c] shadow-[0_8px_26px_rgba(219,159,82,0.32)] hover:shadow-[0_12px_34px_rgba(219,159,82,0.45)] hover:-translate-y-px transition-all disabled:cursor-not-allowed disabled:opacity-70"
+        className="btn btn-dark btn-lg w-full"
       >
-        {pending ? "Wird erstellt…" : "Meine Treuekarte erstellen"}
+        {pending ? "Wird erstellt…" : "Karte ohne Konto erstellen"}
       </button>
     </form>
   );

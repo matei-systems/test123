@@ -142,7 +142,7 @@ export default function ImageUpload({
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
       </div>
-      {error && <div className="text-xs text-[#FCA5A5] mt-2">{error}</div>}
+      {error && <div className="text-xs text-danger mt-2">{error}</div>}
       {!value && kind === "logo" && <div className="text-xs text-faint mt-2">Ohne Upload wird der Logo-Buchstabe verwendet.</div>}
     </div>
   );

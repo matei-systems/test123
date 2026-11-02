@@ -100,9 +100,9 @@ export default async function AdminOrgDetailPage({ params }: { params: { id: str
         <div className="card p-5">
           <h2 className="text-sm font-bold tracking-tight mb-3">Abrechnung</h2>
           <div className="text-sm space-y-1.5 text-dim">
-            <div>Tarif: <span className="text-[#F4F1EC] font-medium">{billing.plan?.name ?? "Kein Tarif"}</span>{billing.interval && ` (${billing.interval === "monthly" ? "monatlich" : "jährlich"})`}</div>
-            <div>Status: <span className="text-[#F4F1EC] font-medium">{billing.subscriptionStatus ?? "kein Stripe-Abo"}</span></div>
-            <div>Zugriff: <span className={billing.state === "active" ? "text-[#86EFAC]" : "text-[#FCA5A5]"}>{billing.state === "active" ? "Aktiv" : "Eingeschränkt"}</span> - {ACCESS_REASON_MESSAGE[billing.reason]}</div>
+            <div>Tarif: <span className="text-fg font-medium">{billing.plan?.name ?? "Kein Tarif"}</span>{billing.interval && ` (${billing.interval === "monthly" ? "monatlich" : "jährlich"})`}</div>
+            <div>Status: <span className="text-fg font-medium">{billing.subscriptionStatus ?? "kein Stripe-Abo"}</span></div>
+            <div>Zugriff: <span className={billing.state === "active" ? "text-forest" : "text-danger"}>{billing.state === "active" ? "Aktiv" : "Eingeschränkt"}</span> - {ACCESS_REASON_MESSAGE[billing.reason]}</div>
             {billing.trialEndsAt && <div>Testphase endet: {fmtDate(billing.trialEndsAt.toISOString())}</div>}
             {billing.currentPeriodEnd && <div>{billing.cancelAtPeriodEnd ? "Endet am" : "Nächste Abrechnung"}: {fmtDate(billing.currentPeriodEnd.toISOString())}</div>}
             {org.stripe_customer_id && <div className="text-xs text-faint">Stripe-Kunde: {org.stripe_customer_id}</div>}
@@ -149,7 +149,7 @@ export default async function AdminOrgDetailPage({ params }: { params: { id: str
           <table className="w-full text-sm">
             <tbody>
               {(memberships ?? []).map((m: any) => (
-                <tr key={m.id} className="border-b border-white/[0.06] last:border-b-0">
+                <tr key={m.id} className="border-b border-line last:border-b-0">
                   <td className="p-4">{m.profiles?.full_name || m.profiles?.email || m.user_id}</td>
                   <td className="p-4 text-dim">{m.profiles?.email}</td>
                   <td className="p-4 text-faint">{ROLE_LABEL[m.role] ?? m.role}</td>
@@ -173,7 +173,7 @@ export default async function AdminOrgDetailPage({ params }: { params: { id: str
               <table className="w-full text-sm">
                 <tbody>
                   {invoices.map((inv) => (
-                    <tr key={inv.id} className="border-b border-white/[0.06] last:border-b-0">
+                    <tr key={inv.id} className="border-b border-line last:border-b-0">
                       <td className="p-3 text-faint">{fmtDate(inv.date.toISOString())}</td>
                       <td className="p-3 font-medium">{inv.amount}</td>
                       <td className="p-3 text-faint capitalize">{inv.status}</td>
@@ -201,7 +201,7 @@ export default async function AdminOrgDetailPage({ params }: { params: { id: str
               <table className="w-full text-sm">
                 <tbody>
                   {(tickets ?? []).map((t: any) => (
-                    <tr key={t.id} className="border-b border-white/[0.06] last:border-b-0">
+                    <tr key={t.id} className="border-b border-line last:border-b-0">
                       <td className="p-3">
                         <Link href={`/admin/support/${t.id}`} className="text-gold hover:text-gold-bright">
                           {t.subject}
@@ -227,7 +227,7 @@ export default async function AdminOrgDetailPage({ params }: { params: { id: str
             <table className="w-full text-sm">
               <tbody>
                 {(auditLog ?? []).map((a: any) => (
-                  <tr key={a.id} className="border-b border-white/[0.06] last:border-b-0">
+                  <tr key={a.id} className="border-b border-line last:border-b-0">
                     <td className="p-3 font-medium">{a.action}</td>
                     <td className="p-3 text-faint">{adminMap.get(a.admin_id) ?? a.admin_id}</td>
                     <td className="p-3 text-faint">{fmtDateTime(a.created_at)}</td>

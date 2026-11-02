@@ -26,7 +26,7 @@ export default function DeleteProgramButton({
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-xs text-[#FCA5A5]">
+      <span className="text-xs text-danger">
         {cardCount > 0
           ? `${cardCount} ausgegebene Karte${cardCount === 1 ? "" : "n"} wird${cardCount === 1 ? "" : "en"} mit gelöscht. Sicher?`
           : "Wirklich löschen?"}
@@ -50,14 +50,14 @@ export default function DeleteProgramButton({
           })
         }
         className="btn text-sm"
-        style={{ background: "rgba(239,68,68,0.15)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.3)" }}
+        style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))", border: "1px solid rgb(var(--danger) / 0.3)" }}
       >
         {pending ? "Wird gelöscht…" : "Ja, löschen"}
       </button>
       <button type="button" onClick={() => setConfirming(false)} disabled={pending} className="btn btn-ghost text-sm">
         Abbrechen
       </button>
-      {error && <span className="text-xs text-[#FCA5A5] w-full">{error}</span>}
+      {error && <span className="text-xs text-danger w-full">{error}</span>}
     </div>
   );
 }

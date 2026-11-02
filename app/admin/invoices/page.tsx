@@ -13,11 +13,11 @@ const STATUS_LABEL: Record<string, string> = {
   void: "Storniert",
 };
 const STATUS_COLOR: Record<string, { bg: string; fg: string }> = {
-  paid: { bg: "rgba(74,222,128,0.12)", fg: "#86EFAC" },
-  open: { bg: "rgba(232,181,115,0.14)", fg: "#E8B573" },
-  uncollectible: { bg: "rgba(239,68,68,0.12)", fg: "#FCA5A5" },
-  void: { bg: "rgba(148,148,148,0.14)", fg: "#C9C4BC" },
-  draft: { bg: "rgba(148,148,148,0.14)", fg: "#C9C4BC" },
+  paid: { bg: "rgb(var(--forest) / 0.12)", fg: "rgb(var(--forest))" },
+  open: { bg: "rgb(var(--accent-strong) / 0.14)", fg: "rgb(var(--accent))" },
+  uncollectible: { bg: "rgb(var(--danger) / 0.1)", fg: "rgb(var(--danger))" },
+  void: { bg: "rgb(var(--fg) / 0.06)", fg: "rgb(var(--muted))" },
+  draft: { bg: "rgb(var(--fg) / 0.06)", fg: "rgb(var(--muted))" },
 };
 
 function fmtDate(unix: number | null): string {
@@ -43,7 +43,7 @@ export default async function AdminInvoicesPage({
       <div>
         <h1 className="text-2xl font-bold tracking-tight mb-1">Rechnungen</h1>
         <p className="text-dim text-sm mb-6">Alle Rechnungen aus Stripe, plattformweit</p>
-        <div className="card p-5 text-sm" style={{ background: "rgba(232,181,115,0.08)", color: "#E8B573" }}>
+        <div className="card p-5 text-sm" style={{ background: "rgb(var(--accent-strong) / 0.08)", color: "rgb(var(--accent))" }}>
           Zahlungen sind noch nicht eingerichtet - Rechnungen erscheinen hier automatisch, sobald ein Stripe-Konto hinterlegt ist.
         </div>
       </div>
@@ -105,7 +105,7 @@ export default async function AdminInvoicesPage({
       <div className="card overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/[0.06] text-left text-xs uppercase tracking-wide text-faint">
+            <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-faint">
               <th className="p-4 font-medium">Betrieb</th>
               <th className="p-4 font-medium">Datum</th>
               <th className="p-4 font-medium">Betrag</th>
@@ -119,7 +119,7 @@ export default async function AdminInvoicesPage({
               const orgName = customerId ? orgByCustomer.get(customerId) : null;
               const color = STATUS_COLOR[inv.status ?? ""] ?? STATUS_COLOR.draft;
               return (
-                <tr key={inv.id} className="border-b border-white/[0.06] last:border-b-0 hover:bg-white/[0.02]">
+                <tr key={inv.id} className="border-b border-line last:border-b-0 hover:bg-fg/[0.03]">
                   <td className="p-4 font-medium">{orgName ?? "Unbekannter Betrieb"}</td>
                   <td className="p-4 text-faint">{fmtDate(inv.created)}</td>
                   <td className="p-4 text-dim">{((inv.amount_paid ?? inv.total ?? 0) / 100).toFixed(2)}€</td>

@@ -3,10 +3,10 @@
 import { useFormStatus } from "react-dom";
 
 const base =
-  "w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-[15px] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-70";
+  "w-full inline-flex min-h-[48px] items-center justify-center gap-2 px-5 py-3 rounded-full text-[15px] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-70";
 const variants = {
-  gold: "bg-gold-grad text-[#241a0c] shadow-[0_8px_26px_rgba(219,159,82,0.32)] hover:shadow-[0_12px_34px_rgba(219,159,82,0.45)] hover:-translate-y-px",
-  line: "bg-transparent border border-line-2 text-[#F4F1EC] hover:border-gold hover:text-gold-bright",
+  gold: "bg-accent-strong text-on-accent shadow-[0_8px_20px_-10px_rgb(var(--accent-strong)/0.7)] hover:bg-accent hover:-translate-y-px",
+  line: "bg-transparent border border-line-2 text-fg hover:border-gold hover:text-gold-bright",
 };
 
 export default function SubmitButton({

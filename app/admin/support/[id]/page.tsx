@@ -54,7 +54,7 @@ export default async function AdminTicketDetailPage({
       </div>
 
       {searchParams?.error && (
-        <div className="mb-5 text-sm rounded-lg px-3 py-2.5" style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+        <div className="mb-5 text-sm rounded-lg px-3 py-2.5" style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))" }}>
           {searchParams.error}
         </div>
       )}
@@ -64,10 +64,10 @@ export default async function AdminTicketDetailPage({
           <div
             key={m.id}
             className="card p-4"
-            style={m.is_admin ? { background: "rgba(232,181,115,0.06)", borderColor: "rgba(232,181,115,0.2)" } : undefined}
+            style={m.is_admin ? { background: "rgb(var(--accent-strong) / 0.06)", borderColor: "rgb(var(--accent-strong) / 0.2)" } : undefined}
           >
             <div className="flex items-center justify-between mb-1.5 text-xs text-faint">
-              <span className="font-semibold" style={{ color: m.is_admin ? "#E8B573" : "#F4F1EC" }}>
+              <span className="font-semibold" style={{ color: m.is_admin ? "rgb(var(--accent))" : "rgb(var(--fg))" }}>
                 {m.is_admin ? "Support-Team" : m.profiles?.full_name || m.profiles?.email || "Betrieb"}
               </span>
               <span>{fmtDateTime(m.created_at)}</span>

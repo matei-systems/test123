@@ -39,7 +39,7 @@ export default function InvitationsList({ invitations }: { invitations: Invitati
           <div key={inv.id} className="card p-3.5 flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="text-sm font-medium truncate">{inv.email}</div>
-              <div className="text-xs text-[#A6A099]">
+              <div className="text-xs text-muted">
                 {ROLE_LABEL[inv.role]} · {expired ? "Abgelaufen" : "Ausstehend"}
               </div>
             </div>
@@ -60,7 +60,7 @@ export default function InvitationsList({ invitations }: { invitations: Invitati
                 disabled={pendingId === inv.id}
                 onClick={() => revoke(inv.id)}
                 className="btn text-xs"
-                style={{ background: "rgba(239,68,68,0.15)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.3)" }}
+                style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))", border: "1px solid rgb(var(--danger) / 0.3)" }}
               >
                 {pendingId === inv.id ? "…" : "Zurückziehen"}
               </button>
@@ -68,7 +68,7 @@ export default function InvitationsList({ invitations }: { invitations: Invitati
           </div>
         );
       })}
-      {items.length === 0 && <div className="text-[#6E685F] text-sm">Keine offenen Einladungen.</div>}
+      {items.length === 0 && <div className="text-faint text-sm">Keine offenen Einladungen.</div>}
     </div>
   );
 }

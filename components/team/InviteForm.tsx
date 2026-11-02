@@ -49,13 +49,13 @@ export default function InviteForm({ canInviteAdmin }: { canInviteAdmin: boolean
       </form>
 
       {error && (
-        <div className="mt-3 text-sm rounded-lg px-3 py-2" style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+        <div className="mt-3 text-sm rounded-lg px-3 py-2" style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))" }}>
           {error}
         </div>
       )}
 
       {result && (
-        <div className="mt-3 text-sm rounded-lg px-3 py-3 space-y-2" style={{ background: "rgba(16,185,129,0.1)", color: "#F4F1EC" }}>
+        <div className="mt-3 text-sm rounded-lg px-3 py-3 space-y-2" style={{ background: "rgb(var(--forest) / 0.1)", color: "rgb(var(--fg))" }}>
           <div>
             {result.emailed
               ? "Einladung wurde per E-Mail verschickt. Alternativ kannst du den Link auch direkt teilen:"

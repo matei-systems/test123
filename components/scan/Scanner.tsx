@@ -1,229 +1,274 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import jsQR from "jsqr";
-import { lookupScannedCard, scanStamp, scanAddPoints, scanRedeem, type ScannedCard } from "@/app/dashboard/scan/actions";
+import { useCallback, useRef, useState } from "react";
+import { CameraMessage, useQrCamera } from "@/components/scan/useQrCamera";
+import {
+  lookupScan,
+  lookupShortCode,
+  scanEarn,
+  scanRedeemCode,
+  scanRedeemReward,
+  type ScanResult,
+  type ScannedCard,
+  type ScannedCode,
+} from "@/app/dashboard/scan/actions";
 
-type Status = "starting" | "scanning" | "denied" | "unsupported";
+const fmtEuro = (n: number | null) => (n === null ? "" : new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR" }).format(n));
+const unit = (type: string, n: number) => (type === "stamp" ? "Stempel" : n === 1 ? "Punkt" : "Punkte");
+
+function newRequestId() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
 
 export default function Scanner() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  // Refs, nicht State: der rAF-Loop unten ist eine einzige stabile Closure
-  // über die gesamte Kamera-Session hinweg und darf nicht auf veralteten
-  // React-State zugreifen - busyRef ist die einzige Quelle der Wahrheit
-  // dafür, ob gerade ein erkannter Code verarbeitet wird.
-  const busyRef = useRef(false);
-  const rafRef = useRef<number>();
-
-  const [status, setStatus] = useState<Status>("starting");
   const [card, setCard] = useState<ScannedCard | null>(null);
+  const [code, setCode] = useState<ScannedCode | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   const [amount, setAmount] = useState("");
+  const [confirmReward, setConfirmReward] = useState<string | null>(null);
+  const [manual, setManual] = useState("");
+  const requestId = useRef(newRequestId());
 
-  useEffect(() => {
-    let stream: MediaStream | null = null;
-    let stopped = false;
-
-    async function handleScan(text: string) {
-      const res = await lookupScannedCard(text);
-      if (stopped) return;
-      if (res.error) {
-        setError(res.error);
-        busyRef.current = false;
-        return;
-      }
-      setError(null);
-      setCard(res.card ?? null);
-      // busyRef bleibt true, bis reset() (nach "Abbrechen" oder nach
-      // erfolgreicher Aktion) den Scan-Loop wieder freigibt.
+  const apply = useCallback((res: ScanResult) => {
+    if ("error" in res) {
+      setError(res.error);
+      return false;
     }
-
-    function tick() {
-      if (stopped) return;
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      if (video && canvas && video.readyState === video.HAVE_ENOUGH_DATA && !busyRef.current) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        if (ctx) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const code = jsQR(imageData.data, imageData.width, imageData.height);
-          if (code) {
-            busyRef.current = true;
-            handleScan(code.data);
-          }
-        }
-      }
-      rafRef.current = requestAnimationFrame(tick);
+    setError(null);
+    if (res.kind === "card") {
+      setCard(res.card);
+      setCode(null);
+    } else {
+      setCode(res.code);
+      setCard(null);
     }
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setStatus("unsupported");
-      return;
-    }
-
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment" } })
-      .then((s) => {
-        if (stopped) {
-          s.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        stream = s;
-        if (videoRef.current) {
-          videoRef.current.srcObject = s;
-          videoRef.current.play();
-        }
-        setStatus("scanning");
-        rafRef.current = requestAnimationFrame(tick);
-      })
-      .catch(() => setStatus("denied"));
-
-    return () => {
-      stopped = true;
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      stream?.getTracks().forEach((t) => t.stop());
-    };
+    return true;
   }, []);
+
+  const resumeRef = useRef<() => void>(() => {});
+  const onCode = useCallback(
+    async (text: string) => {
+      const ok = apply(await lookupScan(text));
+      if (!ok) setTimeout(() => resumeRef.current(), 1800);
+    },
+    [apply]
+  );
+  const { videoRef, canvasRef, status, resume } = useQrCamera(onCode);
+  resumeRef.current = resume;
 
   function reset() {
     setCard(null);
+    setCode(null);
     setError(null);
     setFlash(null);
     setAmount("");
-    busyRef.current = false;
+    setConfirmReward(null);
+    requestId.current = newRequestId();
+    resume();
   }
 
-  async function act(
-    action: (id: string, purchaseAmount?: number) => Promise<{ error?: string; card?: ScannedCard }>,
-    successMsg: string
-  ) {
+  function done(message: string) {
+    setFlash(message);
+    requestId.current = newRequestId();
+    setTimeout(reset, 1600);
+  }
+
+  async function earn() {
     if (!card) return;
-    let purchaseAmount: number | undefined;
+    let purchase: number | null = null;
     if (card.earningMode === "amount") {
-      purchaseAmount = Number(amount.replace(",", "."));
-      if (!amount || Number.isNaN(purchaseAmount) || purchaseAmount < 0) {
+      purchase = Number(amount.replace(",", "."));
+      if (!amount || !Number.isFinite(purchase) || purchase < 0) {
         setError("Bitte gib den Einkaufsbetrag an.");
         return;
       }
     }
     setPending(true);
-    const res = await action(card.id, purchaseAmount);
+    const res = await scanEarn(card.id, purchase, requestId.current);
     setPending(false);
-    if (res.error) {
-      setError(res.error);
-      return;
-    }
-    setCard(res.card ?? null);
-    setFlash(successMsg);
-    setTimeout(() => reset(), 1400);
+    if ("error" in res) return setError(res.error);
+    done(res.message ?? "Gebucht");
   }
 
+  async function redeemFromCard(rewardId: string) {
+    if (!card) return;
+    setPending(true);
+    const res = await scanRedeemReward(card.id, rewardId, requestId.current);
+    setPending(false);
+    setConfirmReward(null);
+    if ("error" in res) return setError(res.error);
+    done(res.message ?? "Eingelöst");
+  }
+
+  async function redeemCode() {
+    if (!code) return;
+    setPending(true);
+    const res = await scanRedeemCode(code.token, requestId.current);
+    setPending(false);
+    if (res.error) return setError(res.error);
+    done(res.message ?? "Eingelöst");
+  }
+
+  async function submitManual(e: React.FormEvent) {
+    e.preventDefault();
+    setPending(true);
+    apply(await lookupShortCode(manual));
+    setPending(false);
+  }
+
+  const overlay = card || code || flash;
+
   return (
-    <div className="max-w-md mx-auto">
-      <div className="relative rounded-2xl overflow-hidden bg-black aspect-square">
-        <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
+    <div className="mx-auto max-w-md">
+      <div className="relative aspect-square overflow-hidden rounded-card bg-[#14110F]">
+        <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
         <canvas ref={canvasRef} className="hidden" />
-
-        {status === "scanning" && !card && (
-          <div className="absolute inset-0 grid place-items-center pointer-events-none">
-            <div className="w-2/3 aspect-square border-2 border-white/70 rounded-2xl" style={{ boxShadow: "0 0 0 999px rgba(0,0,0,0.35)" }} />
+        {status === "scanning" && !overlay && (
+          <div className="pointer-events-none absolute inset-0 grid place-items-center">
+            <div className="aspect-square w-2/3 rounded-3xl border-2 border-white/80" style={{ boxShadow: "0 0 0 999px rgba(0,0,0,0.35)" }} />
           </div>
         )}
+        <CameraMessage status={status} />
 
-        {status === "starting" && (
-          <div className="absolute inset-0 grid place-items-center text-sm text-[#A6A099] bg-ink">Kamera wird gestartet…</div>
-        )}
-        {status === "denied" && (
-          <div className="absolute inset-0 grid place-items-center text-center text-sm text-[#FCA5A5] bg-ink p-6">
-            Kein Kamerazugriff. Bitte in den Browser-Einstellungen erlauben und neu laden.
-          </div>
-        )}
-        {status === "unsupported" && (
-          <div className="absolute inset-0 grid place-items-center text-center text-sm text-[#FCA5A5] bg-ink p-6">
-            Dieses Gerät/dieser Browser unterstützt keinen Kamerazugriff.
-          </div>
-        )}
-
-        {card && (
-          <div className="absolute inset-0 bg-ink/95 backdrop-blur-sm flex flex-col justify-center p-5 enter">
+        {overlay && (
+          <div className="enter absolute inset-0 flex flex-col overflow-y-auto bg-surface">
             {flash ? (
-              <div className="text-center">
-                <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-emerald-500/20 text-emerald-400 grid place-items-center text-2xl">✓</div>
-                <div className="text-[#F4F1EC] font-semibold">{flash}</div>
+              <div role="status" className="m-auto p-6 text-center">
+                <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-forest text-on-forest">
+                  <svg viewBox="0 0 24 24" className="stamp-pop h-8 w-8" fill="none" stroke="currentColor" strokeWidth={3}>
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                </span>
+                <p className="mt-4 font-display text-2xl font-semibold">{flash}</p>
               </div>
-            ) : (
+            ) : card ? (
               <>
-                <div className="text-center mb-4">
-                  <div className="text-xs uppercase tracking-wide text-gold mb-1">{card.programTitle}</div>
-                  <div className="text-lg font-bold text-[#F4F1EC]">{card.customerName}</div>
-                  <div className="text-sm text-[#A6A099] mt-1">
-                    {card.type === "stamp" ? `${card.stamps} / ${card.stampsRequired} Stempel` : `${card.points} / ${card.pointsPerReward} Punkte`}
-                    {card.ready && <span className="ml-2 text-emerald-400">· Belohnung frei</span>}
-                  </div>
+                <div className="bg-forest px-5 py-4 text-on-forest">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] opacity-80">{card.programTitle}</p>
+                  <p className="font-display text-xl font-semibold">{card.customerName}</p>
+                  <p className="text-sm opacity-90 tabular">
+                    {card.type === "stamp" ? `${card.balance} / ${card.stampsRequired} Stempel` : `${card.balance} Punkte`}
+                  </p>
                 </div>
-                {error && (
-                  <div className="mb-3 text-sm rounded-lg px-3 py-2 text-center" style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
-                    {error}
-                  </div>
-                )}
-                {card.earningMode === "amount" && (
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    step="0.01"
-                    min="0"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder={
-                      card.type === "stamp"
-                        ? `Einkaufsbetrag (ab ${(card.minPurchaseAmount ?? 0).toFixed(2)} € = 1 Stempel)`
-                        : `Einkaufsbetrag (${(card.amountPerPoint ?? 0).toFixed(2)} € = 1 Punkt)`
-                    }
-                    className="input mb-2 text-center"
-                    aria-label="Einkaufsbetrag in Euro"
-                  />
-                )}
-                <div className="flex flex-col gap-2">
-                  {card.type === "stamp" ? (
-                    <button disabled={pending} onClick={() => act(scanStamp, "Stempel vergeben!")} className="btn btn-primary">
-                      {pending ? "…" : "+ Stempel geben"}
-                    </button>
-                  ) : (
-                    <button disabled={pending} onClick={() => act(scanAddPoints, "Punkte vergeben!")} className="btn btn-primary">
-                      {pending ? "…" : card.earningMode === "amount" ? "Punkte berechnen & buchen" : "+ 10 Punkte geben"}
-                    </button>
+                <div className="flex flex-1 flex-col gap-3 p-5">
+                  {error && <p role="alert" className="rounded-xl bg-danger/10 px-3 py-2 text-center text-sm font-medium text-danger">{error}</p>}
+                  {!card.programActive && <p className="text-center text-sm font-semibold text-warn">Programm ist pausiert.</p>}
+                  {card.earningMode === "amount" && (
+                    <div>
+                      <label htmlFor="scan-amount" className="label">
+                        Einkaufsbetrag in €{" "}
+                        {card.type === "stamp" ? `(ab ${fmtEuro(card.minPurchaseAmount)} = 1 Stempel)` : `(${fmtEuro(card.amountPerPoint)} = 1 Punkt)`}
+                      </label>
+                      <input
+                        id="scan-amount"
+                        type="text"
+                        inputMode="decimal"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="z. B. 12,50"
+                        className="input text-center text-lg"
+                        autoFocus
+                      />
+                    </div>
                   )}
-                  <button
-                    disabled={pending || !card.ready}
-                    onClick={() => act(scanRedeem, "Belohnung eingelöst!")}
-                    className="btn btn-ghost"
-                  >
-                    {pending ? "…" : `Einlösen: ${card.rewardDescription}`}
+                  <button type="button" disabled={pending} onClick={earn} className="btn btn-forest btn-lg w-full">
+                    {pending ? "Wird gebucht …" : card.type === "stamp" ? "+1 Stempel" : card.earningMode === "amount" ? "Punkte buchen" : "+10 Punkte"}
                   </button>
-                  <button disabled={pending} onClick={reset} className="btn btn-ghost text-sm mt-1">
+
+                  {card.rewards.length > 0 && (
+                    <div className="mt-1">
+                      <p className="label">Belohnung einlösen</p>
+                      <ul className="space-y-2">
+                        {card.rewards.map((r) => (
+                          <li key={r.id}>
+                            {confirmReward === r.id ? (
+                              <div className="rounded-xl border border-accent-strong/40 bg-accent-strong/5 p-3">
+                                <p className="text-sm font-semibold">
+                                  „{r.title}“ für {r.cost} {unit(card.type, r.cost)} einlösen?
+                                </p>
+                                {r.conditions && <p className="mt-1 text-xs text-muted">Bedingung: {r.conditions}</p>}
+                                <div className="mt-2 grid grid-cols-2 gap-2">
+                                  <button type="button" disabled={pending} onClick={() => redeemFromCard(r.id)} className="btn btn-primary btn-sm">
+                                    {pending ? "…" : "Ja, einlösen"}
+                                  </button>
+                                  <button type="button" disabled={pending} onClick={() => setConfirmReward(null)} className="btn btn-ghost btn-sm">
+                                    Abbrechen
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={pending || !r.available}
+                                onClick={() => setConfirmReward(r.id)}
+                                className="flex w-full items-center justify-between gap-3 rounded-xl border border-line px-3 py-2.5 text-left text-sm transition hover:border-accent-strong disabled:cursor-not-allowed disabled:opacity-55"
+                              >
+                                <span className="font-medium">{r.title}</span>
+                                <span className={`shrink-0 tabular ${r.available ? "font-semibold text-accent" : "text-faint"}`}>
+                                  {r.available ? `${r.cost} ${unit(card.type, r.cost)}` : `noch ${r.cost - card.balance}`}
+                                </span>
+                              </button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <button type="button" disabled={pending} onClick={reset} className="btn btn-ghost mt-auto w-full">
+                    Nächster Kunde
+                  </button>
+                </div>
+              </>
+            ) : code ? (
+              <>
+                <div className="bg-accent-strong px-5 py-4 text-on-accent">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] opacity-80">Einlöse-Code {code.shortCode}</p>
+                  <p className="font-display text-xl font-semibold">{code.rewardTitle}</p>
+                  <p className="text-sm opacity-90">
+                    {code.customerName} · kostet {code.cost} {unit(code.type, code.cost)} · Stand {code.balance}
+                  </p>
+                </div>
+                <div className="flex flex-1 flex-col gap-3 p-5">
+                  {error && <p role="alert" className="rounded-xl bg-danger/10 px-3 py-2 text-center text-sm font-medium text-danger">{error}</p>}
+                  <p className="text-sm text-muted">Bitte die Belohnung übergeben und dann bestätigen. Der Code ist danach verbraucht.</p>
+                  <button type="button" disabled={pending} onClick={redeemCode} className="btn btn-primary btn-lg w-full">
+                    {pending ? "Wird eingelöst …" : "Einlösung bestätigen"}
+                  </button>
+                  <button type="button" disabled={pending} onClick={reset} className="btn btn-ghost mt-auto w-full">
                     Abbrechen
                   </button>
                 </div>
               </>
-            )}
+            ) : null}
           </div>
         )}
       </div>
 
-      {error && !card && (
-        <div className="mt-4 text-sm rounded-lg px-3 py-2 text-center" style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+      {error && !overlay && (
+        <p role="alert" className="mt-4 rounded-xl bg-danger/10 px-3 py-2 text-center text-sm font-medium text-danger">
           {error}
-        </div>
+        </p>
       )}
 
-      <p className="text-center text-xs text-faint mt-4">
-        QR-Code der Kundenkarte in den Rahmen halten — Stempeln/Einlösen läuft danach automatisch für den nächsten Kunden weiter.
+      <form onSubmit={submitManual} className="mt-5 flex gap-2">
+        <label htmlFor="manual-code" className="sr-only">Kurzcode eingeben</label>
+        <input
+          id="manual-code"
+          value={manual}
+          onChange={(e) => setManual(e.target.value.toUpperCase())}
+          placeholder="Kurzcode, z. B. ABC 234"
+          className="input font-mono uppercase tracking-[0.12em]"
+          maxLength={9}
+          autoComplete="off"
+        />
+        <button type="submit" disabled={pending || manual.replace(/[^A-Za-z0-9]/g, "").length !== 6} className="btn btn-dark shrink-0">
+          Prüfen
+        </button>
+      </form>
+      <p className="mt-4 text-center text-xs text-faint">
+        Kundenkarte oder Einlöse-Code in den Rahmen halten. Jede Buchung wird serverseitig geprüft und protokolliert.
       </p>
     </div>
   );

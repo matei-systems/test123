@@ -4,7 +4,9 @@ import QRCode from "qrcode";
 import { getCurrentOrg } from "@/lib/org";
 import { hasMinRole } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
-import { issueCard, addStamp, addPoints, redeem } from "../actions";
+import { randomUUID } from "crypto";
+import { issueCard, addStamp, addPoints, redeem, setProgramActive } from "../actions";
+import { rewardIsCurrent } from "@/lib/konto";
 import { resolveDesign, cardBaseStyle, cardTextColor } from "@/lib/card-design";
 import DeleteProgramButton from "@/components/programs/DeleteProgramButton";
 import SubmitButton from "@/components/SubmitButton";
@@ -16,7 +18,7 @@ export default async function ProgramDetail({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { error?: string };
+  searchParams: { error?: string; ok?: string };
 }) {
   const { org, role } = await getCurrentOrg();
   if (!org) redirect("/dashboard/onboarding");
@@ -37,6 +39,15 @@ export default async function ProgramDetail({
     .eq("program_id", params.id)
     .order("created_at", { ascending: false });
 
+  const { data: rewardRows } = await supabase
+    .from("rewards")
+    .select("id, title, cost_points, is_default, valid_from, valid_until")
+    .eq("program_id", params.id)
+    .eq("active", true)
+    .is("ended_at", null)
+    .order("cost_points", { ascending: true });
+  const rewards = (rewardRows ?? []).filter((r: any) => rewardIsCurrent(r));
+
   const isStamp = program.type === "stamp";
   const design = resolveDesign(program.design);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -45,14 +56,23 @@ export default async function ProgramDetail({
 
   return (
     <div>
-      <Link href="/dashboard/programs" className="text-sm text-[#A6A099] hover:text-gold-bright transition-colors">
+      <Link href="/dashboard/programs" className="text-sm text-muted hover:text-gold-bright transition-colors">
         ← Programme
       </Link>
 
       {searchParams?.error && (
-        <div className="mt-3 text-sm rounded-lg px-3 py-2"
-             style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+        <div role="alert" className="mt-3 text-sm font-medium rounded-xl px-4 py-3 bg-danger/10 text-danger">
           {searchParams.error}
+        </div>
+      )}
+      {searchParams?.ok && (
+        <div role="status" className="mt-3 text-sm font-medium rounded-xl px-4 py-3 bg-forest/10 text-forest">
+          {searchParams.ok}
+        </div>
+      )}
+      {!program.active && (
+        <div className="mt-3 text-sm font-medium rounded-xl px-4 py-3 bg-warn/10 text-warn">
+          Dieses Programm ist pausiert: keine Vergabe, keine Einlösung, kein öffentlicher Beitritt.
         </div>
       )}
 
@@ -70,8 +90,8 @@ export default async function ProgramDetail({
             )}
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">{program.title}</h1>
-            <div className="text-sm text-[#A6A099]">
+            <h1 className="font-display text-2xl font-semibold tracking-tight">{program.title}</h1>
+            <div className="text-sm text-muted">
               {isStamp
                 ? `${program.stamps_required} Stempel → ${program.reward_description}`
                 : `${program.points_per_reward} Punkte → ${program.reward_description}`}
@@ -83,7 +103,14 @@ export default async function ProgramDetail({
             <Link href={`/dashboard/programs/${program.id}/edit`} className="btn btn-ghost text-sm">
               Bearbeiten
             </Link>
-            <DeleteProgramButton programId={program.id} cardCount={cards?.length ?? 0} redirectTo="/dashboard/programs" />
+            <form action={setProgramActive.bind(null, program.id, !program.active)}>
+              <SubmitButton pendingText="…" className="btn btn-ghost text-sm">
+                {program.active ? "Pausieren" : "Aktivieren"}
+              </SubmitButton>
+            </form>
+            {(cards?.length ?? 0) === 0 && (
+              <DeleteProgramButton programId={program.id} cardCount={0} redirectTo="/dashboard/programs" />
+            )}
           </div>
         )}
       </div>
@@ -93,8 +120,8 @@ export default async function ProgramDetail({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={joinQr} alt="QR-Code zur Selbstanmeldung" className="w-20 h-20 rounded-lg bg-white p-1.5 shrink-0" />
         <div className="min-w-0 flex-1">
-          <div className="font-semibold text-sm text-[#F4F1EC] mb-1">Kunden melden sich selbst an</div>
-          <div className="text-xs text-[#A6A099] mb-2">
+          <div className="font-semibold text-sm text-fg mb-1">Kunden melden sich selbst an</div>
+          <div className="text-xs text-muted mb-2">
             QR-Code am Tresen aufstellen — Kunde scannt, trägt Namen ein, Karte ist fertig. Kein Personal-Aufwand nötig.
           </div>
           <div className="flex flex-wrap gap-2">
@@ -110,7 +137,7 @@ export default async function ProgramDetail({
 
       {/* Neue Karte ausgeben (manuell durch Personal) */}
       <form action={issueCard} className="card p-5 mb-8 enter" style={{ animationDelay: "60ms" }}>
-        <div className="font-semibold text-sm text-[#F4F1EC] mb-3">Karte an Kunden ausgeben</div>
+        <div className="font-semibold text-sm text-fg mb-3">Karte an Kunden ausgeben</div>
         <input type="hidden" name="orgId" value={org.id} />
         <input type="hidden" name="programId" value={program.id} />
         <div className="grid gap-3 md:grid-cols-3">
@@ -121,14 +148,12 @@ export default async function ProgramDetail({
       </form>
 
       {/* Ausgegebene Karten */}
-      <div className="font-semibold text-sm text-[#F4F1EC] mb-3">
+      <div className="font-semibold text-sm text-fg mb-3">
         Karten ({cards?.length ?? 0})
       </div>
       <div className="space-y-3">
         {(cards ?? []).map((c: any, i: number) => {
-          const ready = isStamp
-            ? c.stamps >= program.stamps_required
-            : c.points >= program.points_per_reward;
+          const ready = rewards.some((r: any) => r.cost_points <= (isStamp ? c.stamps : c.points));
           return (
             <div
               key={c.id}
@@ -137,11 +162,11 @@ export default async function ProgramDetail({
             >
               <div className="min-w-0">
                 <div className="font-medium text-sm">{c.customers?.full_name ?? "Kunde"}</div>
-                <div className="text-xs text-[#A6A099]">
+                <div className="text-xs text-muted">
                   {isStamp
                     ? `${c.stamps} / ${program.stamps_required} Stempel`
                     : `${c.points} / ${program.points_per_reward} Punkte`}
-                  {ready && <span className="ml-2 text-emerald-400">· Belohnung frei</span>}
+                  {ready && <span className="ml-2 text-forest">· Belohnung frei</span>}
                 </div>
                 <Link href={`/c/${c.serial_number}`} target="_blank"
                       className="text-xs text-gold hover:text-gold-bright hover:underline">
@@ -151,6 +176,7 @@ export default async function ProgramDetail({
               <div className="flex gap-2">
                 {isStamp ? (
                   <form action={addStamp} className="flex gap-2">
+                    <input type="hidden" name="requestId" value={randomUUID()} />
                     <input type="hidden" name="cardId" value={c.id} />
                     <input type="hidden" name="programId" value={program.id} />
                     {program.earning_mode === "amount" && (
@@ -171,6 +197,7 @@ export default async function ProgramDetail({
                   </form>
                 ) : (
                   <form action={addPoints} className="flex gap-2">
+                    <input type="hidden" name="requestId" value={randomUUID()} />
                     <input type="hidden" name="cardId" value={c.id} />
                     <input type="hidden" name="programId" value={program.id} />
                     {program.earning_mode === "amount" && (
@@ -190,19 +217,41 @@ export default async function ProgramDetail({
                     </SubmitButton>
                   </form>
                 )}
-                <form action={redeem}>
-                  <input type="hidden" name="cardId" value={c.id} />
-                  <input type="hidden" name="programId" value={program.id} />
-                  <SubmitButton pendingText="…" className="btn btn-ghost text-sm" disabled={!ready}>
-                    Einlösen
-                  </SubmitButton>
-                </form>
+                {(() => {
+                  const balance = isStamp ? c.stamps : c.points;
+                  const available = rewards.filter((r: any) => r.cost_points <= balance);
+                  if (available.length === 0) {
+                    return (
+                      <span className="btn btn-ghost text-sm opacity-60 cursor-default" aria-disabled="true">
+                        Keine Belohnung frei
+                      </span>
+                    );
+                  }
+                  return (
+                    <form action={redeem} className="flex gap-2">
+                      <input type="hidden" name="requestId" value={randomUUID()} />
+                      <input type="hidden" name="cardId" value={c.id} />
+                      <input type="hidden" name="programId" value={program.id} />
+                      <label className="sr-only" htmlFor={`rw-${c.id}`}>Belohnung</label>
+                      <select id={`rw-${c.id}`} name="rewardId" className="input text-sm w-44 !min-h-[36px] !py-1.5" defaultValue={available[available.length - 1].id}>
+                        {available.map((r: any) => (
+                          <option key={r.id} value={r.id}>
+                            {r.title} ({r.cost_points})
+                          </option>
+                        ))}
+                      </select>
+                      <SubmitButton pendingText="…" className="btn btn-ghost text-sm">
+                        Einlösen
+                      </SubmitButton>
+                    </form>
+                  );
+                })()}
               </div>
             </div>
           );
         })}
         {(!cards || cards.length === 0) && (
-          <div className="text-[#6E685F] text-sm">Noch keine Karten ausgegeben.</div>
+          <div className="text-faint text-sm">Noch keine Karten ausgegeben.</div>
         )}
       </div>
     </div>

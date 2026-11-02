@@ -60,7 +60,7 @@ export default async function AdminUsersPage({
       <div className="card overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/[0.06] text-left text-xs uppercase tracking-wide text-faint">
+            <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-faint">
               <th className="p-4 font-medium">E-Mail</th>
               <th className="p-4 font-medium">Name</th>
               <th className="p-4 font-medium">Betriebe</th>
@@ -69,7 +69,7 @@ export default async function AdminUsersPage({
           </thead>
           <tbody>
             {(users ?? []).map((u: any) => (
-              <tr key={u.id} className="border-b border-white/[0.06] last:border-b-0 hover:bg-white/[0.02]">
+              <tr key={u.id} className="border-b border-line last:border-b-0 hover:bg-fg/[0.03]">
                 <td className="p-4 font-medium">{u.email ?? "-"}</td>
                 <td className="p-4 text-dim">{u.full_name || "-"}</td>
                 <td className="p-4">
@@ -79,7 +79,7 @@ export default async function AdminUsersPage({
                         <Link
                           key={i}
                           href={`/admin/organizations/${m.organizations.id}`}
-                          className="text-xs px-2 py-1 rounded-full bg-white/[0.05] text-dim hover:text-gold-bright hover:bg-white/[0.08]"
+                          className="text-xs px-2 py-1 rounded-full bg-fg/[0.05] text-dim hover:text-gold-bright hover:bg-fg/[0.07]"
                         >
                           {m.organizations.name} · {ROLE_LABEL[m.role] ?? m.role}
                         </Link>

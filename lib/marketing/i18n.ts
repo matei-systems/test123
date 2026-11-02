@@ -90,7 +90,7 @@ export const t: Translations = {
     lead: "Die Treuekarte deines Betriebs – direkt im Handy deiner Kunden. Stempel sammeln, Belohnungen einlösen. Ganz ohne App, ohne Plastik, ohne Papier.",
     ctaPrimary: "14 Tage kostenlos starten",
     ctaSecondary: "Live-Demo ansehen",
-    note: "Läuft in Apple Wallet & Google Wallet – schon auf jedem Handy.",
+    note: "Läuft im Browser jedes Handys – Apple Wallet & Google Wallet sind in Vorbereitung.",
   },
   // Beispielbetrieb und Beispielbankkarte im Hero-Mockup: bewusst erfundene
   // Namen ("Café Central", "Musterbank", "Max Mustermann") und keine Logos
@@ -163,7 +163,7 @@ export const t: Translations = {
     h2a: "Papierkarten gehen verloren.",
     h2b: "Das Handy nicht.",
     items: [
-      { title: "Keine App nötig", body: "Läuft in Apple Wallet und Google Wallet – die jeder Kunde schon auf dem Handy hat." },
+      { title: "Keine App nötig", body: "Die Karte öffnet sich direkt im Browser des Handys. Die Anbindung an Apple Wallet und Google Wallet ist in Vorbereitung." },
       { title: "In 2 Sekunden gestempelt", body: "Kurz den Code scannen – fertig. Kein Papierkram, keine verlorenen Kärtchen mehr." },
       { title: "Kunden kommen öfter", body: "Ein Ziel vor Augen bringt Gäste zurück – für den nächsten Stempel und die nächste Belohnung." },
       { title: "Immer aktuell", body: "Neuer Stempel, neue Belohnung, neue Aktion – die Karte im Handy aktualisiert sich von selbst." },

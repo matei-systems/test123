@@ -5,11 +5,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgRole } from "@/lib/org";
 import { translateDbError } from "@/lib/db-errors";
-import { checkStampCooldown } from "@/lib/abuse-protection";
 import type { CardDesign } from "@/lib/card-design";
 import { upsertGoogleLoyaltyClass } from "@/lib/google-wallet";
-import { notifyWalletsOfCardUpdate, registerWalletObjectsForNewCard } from "@/lib/wallet-updates";
-import { unitsFromAmount } from "@/lib/earning-rules";
+import { registerWalletObjectsForNewCard } from "@/lib/wallet-updates";
+import { earnOnCard, ledgerError, redeemReward } from "@/lib/ledger";
 
 export interface ProgramInput {
   name: string;
@@ -112,9 +111,24 @@ export async function deleteProgram(id: string): Promise<{ error?: string }> {
   const supabase = createClient();
   const { error } = await supabase.from("loyalty_programs").delete().eq("id", id).eq("org_id", org.id);
 
-  if (error) return { error: translateDbError(error.message) };
+  // Programme mit Karten blockiert die Datenbank (MATEI_PROGRAM_HAS_CARDS) -
+  // sonst wären Kundenstände und Buchungen unwiderruflich weg.
+  if (error) return { error: ledgerError(error.message) };
   revalidatePath("/dashboard/programs");
   return {};
+}
+
+// Programm pausieren/aktivieren - der sichere Weg statt Löschen, sobald es
+// Karten gibt. Pausiert: keine Vergabe/Einlösung, kein öffentlicher Beitritt.
+export async function setProgramActive(id: string, active: boolean) {
+  const gate = await requireOrgRole("admin");
+  if (!gate.ok) redirect(`/dashboard/programs/${encodeURIComponent(id)}?error=` + encodeURIComponent(gate.error));
+  const supabase = createClient();
+  const { error } = await supabase.from("loyalty_programs").update({ active }).eq("id", id).eq("org_id", gate.org.id);
+  if (error) redirect(`/dashboard/programs/${encodeURIComponent(id)}?error=` + encodeURIComponent(ledgerError(error.message)));
+  revalidatePath(`/dashboard/programs/${id}`);
+  revalidatePath("/dashboard/programs");
+  redirect(`/dashboard/programs/${encodeURIComponent(id)}?ok=` + encodeURIComponent(active ? "Programm ist wieder aktiv." : "Programm ist pausiert."));
 }
 
 // Karte an einen (neuen) Kunden ausgeben
@@ -165,187 +179,54 @@ export async function issueCard(formData: FormData) {
   revalidatePath(`/dashboard/programs/${programId}`);
 }
 
-// +1 Stempel (oder nach Verdienregel via Einkaufsbetrag) - schreibt
-// zusätzlich ins transactions-Journal.
+// Stempel/Punkte vergeben und Belohnungen einlösen laufen ausschließlich über
+// die Datenbankfunktionen (lib/ledger.ts): Mitgliedschaft, Abo, Sperre,
+// Verdienregel, Aktionen, Doppel-Scan-Schutz und Guthaben werden dort unter
+// Zeilensperre geprüft. requestId macht doppelt abgeschickte Formulare
+// idempotent (zweiter Klick = dieselbe Buchung, keine zweite).
+function programPath(formData: FormData) {
+  return `/dashboard/programs/${encodeURIComponent(String(formData.get("programId") ?? ""))}`;
+}
+
+function parseAmount(raw: FormDataEntryValue | null): number | null | "invalid" {
+  if (raw === null || String(raw).trim() === "") return null;
+  const n = Number(String(raw).replace(",", "."));
+  return Number.isFinite(n) && n >= 0 && n < 100000 ? n : "invalid";
+}
+
+async function earnFromForm(formData: FormData) {
+  const path = programPath(formData);
+  const gate = await requireOrgRole("staff");
+  if (!gate.ok) redirect(`${path}?error=` + encodeURIComponent(gate.error));
+
+  const amount = parseAmount(formData.get("amount"));
+  if (amount === "invalid") redirect(`${path}?error=` + encodeURIComponent("Bitte gib einen gültigen Einkaufsbetrag an."));
+
+  const res = await earnOnCard(createClient(), String(formData.get("cardId")), amount as number | null, String(formData.get("requestId") ?? "") || null);
+  if (!res.ok) redirect(`${path}?error=` + encodeURIComponent(res.error));
+  revalidatePath(path);
+  const d = res.data;
+  const unit = d.type === "stamp" ? "Stempel" : d.units === 1 ? "Punkt" : "Punkte";
+  redirect(`${path}?ok=` + encodeURIComponent(d.duplicate ? "Bereits gebucht." : `+${d.units} ${unit}${d.factor > 1 ? ` (Aktion ×${d.factor})` : ""} – neuer Stand ${d.balance}.`));
+}
+
 export async function addStamp(formData: FormData) {
-  const cardId = String(formData.get("cardId"));
-  const programId = String(formData.get("programId"));
-  const amountRaw = formData.get("amount");
-
-  const gate = await requireOrgRole("staff");
-  if (!gate.ok) redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(gate.error));
-
-  const supabase = createClient();
-
-  const { data: card, error: fetchErr } = await supabase
-    .from("cards")
-    .select("stamps, org_id, loyalty_programs(stamps_required, earning_mode, min_purchase_amount)")
-    .eq("id", cardId)
-    .single();
-  if (fetchErr || !card) {
-    redirect(
-      `/dashboard/programs/${programId}?error=` +
-        encodeURIComponent(fetchErr ? translateDbError(fetchErr.message) : "Karte nicht gefunden.")
-    );
-  }
-
-  const p = (card as any).loyalty_programs;
-  let units = 1;
-  if (p?.earning_mode === "amount") {
-    const amount = Number(amountRaw);
-    if (!amountRaw || Number.isNaN(amount) || amount < 0) {
-      redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent("Bitte gib den Einkaufsbetrag an."));
-    }
-    const result = unitsFromAmount(
-      { type: "stamp", earning_mode: p.earning_mode, min_purchase_amount: p.min_purchase_amount, amount_per_point: null },
-      amount
-    );
-    if (result.units <= 0) {
-      redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(result.error ?? "Kein Stempel fällig."));
-    }
-    units = result.units;
-  }
-
-  const cooldownError = await checkStampCooldown(supabase, cardId);
-  if (cooldownError) {
-    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(cooldownError));
-  }
-
-  const req = p?.stamps_required ?? 10;
-  const next = Math.min((card as any).stamps + units, req);
-
-  const { error: updErr } = await supabase.from("cards").update({ stamps: next }).eq("id", cardId);
-  if (updErr) {
-    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(translateDbError(updErr.message)));
-  }
-  await supabase.from("transactions").insert({
-    org_id: (card as any).org_id,
-    card_id: cardId,
-    type: "stamp",
-    amount: next - (card as any).stamps,
-    note: p?.earning_mode === "amount" ? `Einkauf: ${Number(amountRaw).toFixed(2)} €` : null,
-    staff_id: gate.user.id,
-    location_id: gate.locationId,
-  });
-  notifyWalletsOfCardUpdate(cardId).catch(() => {});
-  revalidatePath(`/dashboard/programs/${programId}`);
+  return earnFromForm(formData);
 }
 
-// +10 Punkte (oder nach Verdienregel via Einkaufsbetrag)
 export async function addPoints(formData: FormData) {
-  const cardId = String(formData.get("cardId"));
-  const programId = String(formData.get("programId"));
-  const amountRaw = formData.get("amount");
-
-  const gate = await requireOrgRole("staff");
-  if (!gate.ok) redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(gate.error));
-
-  const supabase = createClient();
-
-  const { data: card, error: fetchErr } = await supabase
-    .from("cards")
-    .select("points, org_id, loyalty_programs(earning_mode, amount_per_point)")
-    .eq("id", cardId)
-    .single();
-  if (fetchErr || !card) {
-    redirect(
-      `/dashboard/programs/${programId}?error=` +
-        encodeURIComponent(fetchErr ? translateDbError(fetchErr.message) : "Karte nicht gefunden.")
-    );
-  }
-
-  const p = (card as any).loyalty_programs;
-  let units = 10;
-  if (p?.earning_mode === "amount") {
-    const amount = Number(amountRaw);
-    if (!amountRaw || Number.isNaN(amount) || amount < 0) {
-      redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent("Bitte gib den Einkaufsbetrag an."));
-    }
-    const result = unitsFromAmount(
-      { type: "points", earning_mode: p.earning_mode, min_purchase_amount: null, amount_per_point: p.amount_per_point },
-      amount
-    );
-    if (result.units <= 0) {
-      redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(result.error ?? "Keine Punkte fällig."));
-    }
-    units = result.units;
-  }
-
-  const { error: updErr } = await supabase
-    .from("cards")
-    .update({ points: (card as any).points + units })
-    .eq("id", cardId);
-  if (updErr) {
-    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(translateDbError(updErr.message)));
-  }
-  await supabase.from("transactions").insert({
-    org_id: (card as any).org_id,
-    card_id: cardId,
-    type: "points",
-    amount: units,
-    note: p?.earning_mode === "amount" ? `Einkauf: ${Number(amountRaw).toFixed(2)} €` : null,
-    staff_id: gate.user.id,
-    location_id: gate.locationId,
-  });
-  notifyWalletsOfCardUpdate(cardId).catch(() => {});
-  revalidatePath(`/dashboard/programs/${programId}`);
+  return earnFromForm(formData);
 }
 
-// Belohnung einlösen: setzt Stempel zurück / zieht Punkte ab + protokolliert
 export async function redeem(formData: FormData) {
-  const cardId = String(formData.get("cardId"));
-  const programId = String(formData.get("programId"));
-
+  const path = programPath(formData);
   const gate = await requireOrgRole("staff");
-  if (!gate.ok) redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(gate.error));
+  if (!gate.ok) redirect(`${path}?error=` + encodeURIComponent(gate.error));
+  const rewardId = String(formData.get("rewardId") ?? "");
+  if (!rewardId) redirect(`${path}?error=` + encodeURIComponent("Bitte wähle eine Belohnung."));
 
-  const supabase = createClient();
-
-  const { data: card, error: fetchErr } = await supabase
-    .from("cards")
-    .select("stamps, points, org_id, program_id, loyalty_programs(type, stamps_required, points_per_reward)")
-    .eq("id", cardId)
-    .single();
-  if (fetchErr || !card) {
-    redirect(
-      `/dashboard/programs/${programId}?error=` +
-        encodeURIComponent(fetchErr ? translateDbError(fetchErr.message) : "Karte nicht gefunden.")
-    );
-  }
-
-  const p = (card as any).loyalty_programs;
-  const isStamp = p?.type === "stamp";
-  const ready = isStamp
-    ? (card as any).stamps >= p.stamps_required
-    : (card as any).points >= p.points_per_reward;
-  if (!ready) {
-    redirect(
-      `/dashboard/programs/${programId}?error=` +
-        encodeURIComponent("Belohnung ist noch nicht freigeschaltet.")
-    );
-  }
-
-  const update = isStamp
-    ? { stamps: 0 }
-    : { points: (card as any).points - p.points_per_reward };
-
-  const { error: updErr } = await supabase.from("cards").update(update).eq("id", cardId);
-  if (updErr) {
-    redirect(`/dashboard/programs/${programId}?error=` + encodeURIComponent(translateDbError(updErr.message)));
-  }
-  await supabase.from("reward_redemptions").insert({
-    org_id: (card as any).org_id,
-    card_id: cardId,
-    staff_id: gate.user.id,
-  });
-  await supabase.from("transactions").insert({
-    org_id: (card as any).org_id,
-    card_id: cardId,
-    type: "redeem",
-    amount: 1,
-    staff_id: gate.user.id,
-    location_id: gate.locationId,
-  });
-  notifyWalletsOfCardUpdate(cardId).catch(() => {});
-  revalidatePath(`/dashboard/programs/${programId}`);
+  const res = await redeemReward(createClient(), String(formData.get("cardId")), rewardId, String(formData.get("requestId") ?? "") || null);
+  if (!res.ok) redirect(`${path}?error=` + encodeURIComponent(res.error));
+  revalidatePath(path);
+  redirect(`${path}?ok=` + encodeURIComponent(res.data.duplicate ? "Bereits eingelöst." : `Eingelöst: ${res.data.reward_title ?? "Belohnung"} – neuer Stand ${res.data.balance}.`));
 }

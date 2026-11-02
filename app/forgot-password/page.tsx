@@ -14,7 +14,7 @@ export default function ForgotPasswordPage({
   if (searchParams?.success) {
     return (
       <AuthShell eyebrow="E-Mail unterwegs" title="Prüfe dein Postfach">
-        <div className="text-sm text-[#F4F1EC] leading-relaxed">
+        <div className="text-sm text-fg leading-relaxed">
           Falls ein Konto mit der Adresse{" "}
           <span className="text-gold-bright font-medium">{searchParams.success}</span> existiert, haben wir
           dir einen Link zum Zurücksetzen deines Passworts geschickt.

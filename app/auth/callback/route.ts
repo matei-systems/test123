@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeNextPath } from "@/lib/safe-path";
 
 // Landing point for Supabase email links (signup confirmation and password
 // recovery both use the PKCE `code` param). Exchanges it for a real session
-// cookie, then continues to `next` (defaults to the dashboard).
+// cookie, then continues to `next` (defaults to /weiter, the role-based entry).
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
@@ -21,20 +22,4 @@ export async function GET(request: NextRequest) {
     `${origin}/login?error=` +
       encodeURIComponent("Dieser Link ist abgelaufen oder ungültig. Bitte fordere einen neuen an.")
   );
-}
-
-// Offener-Redirect-Schutz: `next` kommt direkt aus der URL, die jemand
-// selbst zusammenbauen kann (z. B. ein manipulierter Bestätigungslink).
-// Ohne diese Prüfung ließe sich mit next="@böse-seite.de" nach einem
-// ECHTEN, erfolgreichen Login auf eine fremde Domain umleiten (der
-// "userinfo@host"-Trick: "http://localhost:3000@böse-seite.de" wird von
-// URL-Parsern als Host "böse-seite.de" gelesen) - ein klassischer
-// Phishing-Vektor direkt nach der Authentifizierung. Nur echte,
-// serverinterne Pfade (genau ein führender "/", kein "//"-Protokoll-
-// relativer Pfad) sind erlaubt, alles andere fällt auf /dashboard zurück.
-function safeNextPath(next: string | null): string {
-  if (next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\")) {
-    return next;
-  }
-  return "/dashboard";
 }

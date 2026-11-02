@@ -34,7 +34,7 @@ export const COMPANY = {
   contentResponsible: "Raul Matei",
 } as const;
 
-export const LEGAL_VERSION = "1.1";
-export const LEGAL_LAST_UPDATED = "2026-08-01";
+export const LEGAL_VERSION = "1.2";
+export const LEGAL_LAST_UPDATED = "2026-11-02";
 
 export const AVV_VERSION = "1.0";

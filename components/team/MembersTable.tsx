@@ -94,7 +94,7 @@ export default function MembersTable({
                 {m.profiles?.full_name || m.profiles?.email || "Unbekannt"}
                 {isSelf && <span className="text-faint font-normal"> (du)</span>}
               </div>
-              {m.profiles?.full_name && <div className="text-xs text-[#A6A099] truncate">{m.profiles.email}</div>}
+              {m.profiles?.full_name && <div className="text-xs text-muted truncate">{m.profiles.email}</div>}
             </div>
 
             <div className="flex items-center gap-2 flex-wrap shrink-0">
@@ -132,8 +132,8 @@ export default function MembersTable({
                 <span
                   className="text-xs px-2.5 py-1 rounded-full"
                   style={{
-                    background: m.role === "owner" ? "rgba(232,181,115,0.15)" : "rgba(255,255,255,0.06)",
-                    color: m.role === "owner" ? "#F6D19A" : "#A6A099",
+                    background: m.role === "owner" ? "rgb(var(--accent-strong) / 0.15)" : "rgba(255,255,255,0.06)",
+                    color: m.role === "owner" ? "rgb(var(--accent))" : "rgb(var(--muted))",
                   }}
                 >
                   {ROLE_LABEL[m.role]}
@@ -148,7 +148,7 @@ export default function MembersTable({
                       disabled={busyId === m.id}
                       onClick={() => remove(m.id)}
                       className="btn text-xs"
-                      style={{ background: "rgba(239,68,68,0.15)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.3)" }}
+                      style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))", border: "1px solid rgb(var(--danger) / 0.3)" }}
                     >
                       {busyId === m.id ? "…" : "Sicher?"}
                     </button>
@@ -163,7 +163,7 @@ export default function MembersTable({
                 ))}
             </div>
 
-            {errorId === m.id && error && <div className="text-xs text-[#FCA5A5] w-full">{error}</div>}
+            {errorId === m.id && error && <div className="text-xs text-danger w-full">{error}</div>}
           </div>
         );
       })}

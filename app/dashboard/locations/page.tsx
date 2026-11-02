@@ -22,7 +22,7 @@ export default async function LocationsPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight mb-1">Standorte</h1>
-        <p className="text-[#A6A099] text-sm">
+        <p className="text-muted text-sm">
           Filialen deines Betriebs. Ordne Mitarbeiter im Team-Bereich einem Standort zu — ihre Stempel/Einlösungen
           werden dann automatisch damit getaggt.
         </p>

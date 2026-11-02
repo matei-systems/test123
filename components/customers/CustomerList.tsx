@@ -90,7 +90,7 @@ export default function CustomerList({ customers }: { customers: CustomerRow[] }
       </div>
 
       {filtered.length === 0 ? (
-        <div className="card p-8 text-center text-sm text-[#6E685F]">
+        <div className="card p-8 text-center text-sm text-faint">
           {customers.length === 0 ? "Noch keine Kunden." : "Keine Kunden gefunden."}
         </div>
       ) : (
@@ -102,12 +102,12 @@ export default function CustomerList({ customers }: { customers: CustomerRow[] }
               className="card card-hover p-4 flex items-center gap-4 enter"
               style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}
             >
-              <div className="w-10 h-10 rounded-full bg-[rgba(232,181,115,0.14)] text-gold-bright grid place-items-center font-semibold text-sm shrink-0">
+              <div className="w-10 h-10 rounded-full bg-accent-strong/[0.14] text-gold-bright grid place-items-center font-semibold text-sm shrink-0">
                 {initials(c.full_name)}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="font-medium text-sm truncate">{c.full_name ?? "Kunde"}</div>
-                <div className="text-xs text-[#A6A099] truncate">{c.email ?? c.phone ?? "Keine Kontaktdaten"}</div>
+                <div className="text-xs text-muted truncate">{c.email ?? c.phone ?? "Keine Kontaktdaten"}</div>
               </div>
               <div className="hidden md:flex gap-1.5 flex-wrap justify-end max-w-[45%]">
                 {c.cards.slice(0, 3).map((card) => {
@@ -118,18 +118,18 @@ export default function CustomerList({ customers }: { customers: CustomerRow[] }
                   return (
                     <span
                       key={card.id}
-                      className="text-[11px] px-2 py-1 rounded-full bg-white/[0.05] text-[#A6A099] whitespace-nowrap"
+                      className="text-[11px] px-2 py-1 rounded-full bg-fg/[0.05] text-muted whitespace-nowrap"
                     >
                       {p.title ?? p.name} · {label}
                     </span>
                   );
                 })}
                 {c.cards.length > 3 && (
-                  <span className="text-[11px] px-2 py-1 rounded-full bg-white/[0.05] text-faint">+{c.cards.length - 3}</span>
+                  <span className="text-[11px] px-2 py-1 rounded-full bg-fg/[0.05] text-faint">+{c.cards.length - 3}</span>
                 )}
                 {c.cards.length === 0 && <span className="text-[11px] text-faint">Keine Karte</span>}
               </div>
-              <div className="text-xs text-[#6E685F] shrink-0 hidden sm:block">
+              <div className="text-xs text-faint shrink-0 hidden sm:block">
                 {new Date(c.created_at).toLocaleDateString("de-AT")}
               </div>
             </Link>

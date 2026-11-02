@@ -199,15 +199,15 @@ export default function ProgramWizard({
               <div
                 className={`w-7 h-7 rounded-full grid place-items-center text-xs font-bold shrink-0 transition-colors ${
                   i === step
-                    ? "bg-gold-grad text-[#241a0c]"
+                    ? "bg-gold-grad text-on-accent"
                     : i < step
                     ? "bg-[rgba(232,181,115,0.2)] text-gold-bright"
-                    : "bg-white/[0.06] text-faint"
+                    : "bg-fg/[0.06] text-faint"
                 }`}
               >
                 {i < step ? "✓" : i + 1}
               </div>
-              <span className={`text-xs whitespace-nowrap ${i === step ? "text-[#F4F1EC]" : "text-faint"}`}>{label}</span>
+              <span className={`text-xs whitespace-nowrap ${i === step ? "text-fg" : "text-faint"}`}>{label}</span>
               {i < STEPS.length - 1 && <div className="w-6 h-px bg-white/10 shrink-0" />}
             </div>
           ))}
@@ -235,7 +235,7 @@ export default function ProgramWizard({
                     type="button"
                     onClick={() => set("type", t)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      input.type === t ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+                      input.type === t ? "bg-fg/[0.07] text-fg" : "text-faint hover:text-fg"
                     }`}
                   >
                     {t === "stamp" ? "Stempelkarte" : "Punktekarte"}
@@ -280,7 +280,7 @@ export default function ProgramWizard({
                     type="button"
                     onClick={() => setDesign("baseMode", m)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      d.baseMode === m ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+                      d.baseMode === m ? "bg-fg/[0.07] text-fg" : "text-faint hover:text-fg"
                     }`}
                   >
                     {BASE_MODE_LABEL[m]}
@@ -321,7 +321,7 @@ export default function ProgramWizard({
               {d.baseMode === "color" && <ColorField label="Kartenfarbe" value={d.solidColor} onChange={(v) => setDesign("solidColor", v)} />}
             </div>
 
-            <div className="pt-2 border-t border-white/[0.06]">
+            <div className="pt-2 border-t border-line">
               <label className="label">Bannerbild</label>
               <div className="text-xs text-faint mb-3">
                 Großes Foto in der Kartenmitte, auf dem die Stempel liegen - so wie bei den hochwertigsten Wallet-Karten am Markt.
@@ -359,7 +359,7 @@ export default function ProgramWizard({
                   type="button"
                   onClick={() => setDesign("textColor", "auto")}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    d.textColor === "auto" ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+                    d.textColor === "auto" ? "bg-fg/[0.07] text-fg" : "text-faint hover:text-fg"
                   }`}
                 >
                   Automatisch
@@ -368,7 +368,7 @@ export default function ProgramWizard({
                   type="button"
                   onClick={() => setDesign("textColor", d.textColor === "auto" ? "#FFFFFF" : d.textColor)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    d.textColor !== "auto" ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+                    d.textColor !== "auto" ? "bg-fg/[0.07] text-fg" : "text-faint hover:text-fg"
                   }`}
                 >
                   Manuell
@@ -388,7 +388,7 @@ export default function ProgramWizard({
                     type="button"
                     onClick={() => setDesign("cornerRadius", r)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      d.cornerRadius === r ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+                      d.cornerRadius === r ? "bg-fg/[0.07] text-fg" : "text-faint hover:text-fg"
                     }`}
                   >
                     {RADIUS_LABEL[r]}
@@ -398,7 +398,7 @@ export default function ProgramWizard({
             </div>
 
             {input.type === "stamp" && (
-              <div className="pt-2 border-t border-white/[0.06]">
+              <div className="pt-2 border-t border-line">
                 <label className="label">Stempel-Icon</label>
                 <div className="text-xs text-faint mb-3">
                   Erscheint groß auf jedem Stempel - passend zur Branche (Café, Friseur, Fitness, Beauty, …).
@@ -417,7 +417,7 @@ export default function ProgramWizard({
                       className={`w-10 h-10 rounded-lg grid place-items-center border transition-colors ${
                         !d.stampIconImage && d.stampIconKey === icon.key
                           ? "border-gold bg-[rgba(232,181,115,0.12)]"
-                          : "border-line text-faint hover:text-[#F4F1EC]"
+                          : "border-line text-faint hover:text-fg"
                       }`}
                     >
                       <svg viewBox="0 0 24 24" className="w-5 h-5">
@@ -431,7 +431,7 @@ export default function ProgramWizard({
               </div>
             )}
 
-            <div className="pt-2 border-t border-white/[0.06]">
+            <div className="pt-2 border-t border-line">
               <Field
                 label="Logo-Buchstabe (Fallback ohne Bild)"
                 maxLength={2}
@@ -468,7 +468,7 @@ export default function ProgramWizard({
               hint='Kurz und konkret, z. B. "1 Gratis-Kaffee" oder "10% Rabatt auf den nächsten Einkauf".'
             />
 
-            <div className="pt-4 border-t border-white/[0.06]">
+            <div className="pt-4 border-t border-line">
               <label className="label">Wie werden {input.type === "stamp" ? "Stempel" : "Punkte"} vergeben?</label>
               <div className="text-xs text-faint mb-3">
                 Beim manuellen Weg entscheidet dein Personal frei. Bei der automatischen Regel gibt dein Personal beim
@@ -482,7 +482,7 @@ export default function ProgramWizard({
                     type="button"
                     onClick={() => set("earningMode", m)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      input.earningMode === m ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+                      input.earningMode === m ? "bg-fg/[0.07] text-fg" : "text-faint hover:text-fg"
                     }`}
                   >
                     {m === "manual" ? "Manuell" : "Nach Einkaufsbetrag"}
@@ -521,7 +521,7 @@ export default function ProgramWizard({
         {/* Step 3: Überprüfen */}
         {step === 3 && (
           <div className="space-y-3 enter">
-            <div className="text-sm text-[#F4F1EC] font-semibold mb-2">Alles korrekt?</div>
+            <div className="text-sm text-fg font-semibold mb-2">Alles korrekt?</div>
             {[
               ["Programmname", input.name],
               ["Anzeigename", input.title],
@@ -537,16 +537,16 @@ export default function ProgramWizard({
                   : `Automatisch, 1 Punkt je ${(input.amountPerPoint ?? 0).toFixed(2)} € Einkauf`,
               ],
             ].map(([label, value]) => (
-              <div key={label} className="flex justify-between text-sm py-2 border-t border-white/[0.06] first:border-t-0">
+              <div key={label} className="flex justify-between text-sm py-2 border-t border-line first:border-t-0">
                 <span className="text-faint">{label}</span>
-                <span className="text-[#F4F1EC] font-medium">{value}</span>
+                <span className="text-fg font-medium">{value}</span>
               </div>
             ))}
           </div>
         )}
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/[0.06]">
+        <div className="flex items-center justify-between mt-8 pt-6 border-t border-line">
           <button type="button" onClick={back} disabled={step === 0} className="btn btn-ghost text-sm">
             Zurück
           </button>

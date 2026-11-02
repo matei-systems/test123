@@ -2,215 +2,190 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { translateDbError } from "@/lib/db-errors";
-import { checkStampCooldown } from "@/lib/abuse-protection";
 import { requireOrgRole } from "@/lib/org";
-import { notifyWalletsOfCardUpdate } from "@/lib/wallet-updates";
-import { unitsFromAmount } from "@/lib/earning-rules";
+import { earnOnCard, redeemReward, redeemWithCode, serialFromInput } from "@/lib/ledger";
+import { rewardIsCurrent } from "@/lib/konto";
+
+export interface ScannedReward {
+  id: string;
+  title: string;
+  cost: number;
+  conditions: string | null;
+  available: boolean;
+}
 
 export interface ScannedCard {
   id: string;
-  stamps: number;
-  points: number;
   type: "stamp" | "points";
+  balance: number;
   stampsRequired: number;
-  pointsPerReward: number;
-  rewardDescription: string;
   programTitle: string;
+  programActive: boolean;
   customerName: string;
-  ready: boolean;
   earningMode: "manual" | "amount";
   minPurchaseAmount: number | null;
   amountPerPoint: number | null;
+  status: string;
+  rewards: ScannedReward[];
 }
 
-function serialFromScan(raw: string): string | null {
-  // Erwartet dieselbe URL, die auch im QR-Code der Kundenkarte steckt:
-  // <appUrl>/c/<serial>. Nimmt zur Sicherheit trotzdem nur das letzte
-  // URL-Segment, falls jemand nur den nackten Serial-Code scannt/eingibt.
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  try {
-    const url = new URL(trimmed);
-    const parts = url.pathname.split("/").filter(Boolean);
-    return parts[parts.length - 1] || null;
-  } catch {
-    return trimmed;
-  }
+export interface ScannedCode {
+  requestId: string;
+  token: string;
+  shortCode: string;
+  status: string;
+  expiresAt: string;
+  rewardTitle: string;
+  cost: number;
+  type: "stamp" | "points";
+  balance: number;
+  customerName: string;
+  cardId: string;
 }
 
-async function loadCard(cardId: string): Promise<{ error?: string; card?: ScannedCard }> {
+export type ScanResult = { error: string } | { kind: "card"; card: ScannedCard } | { kind: "code"; code: ScannedCode };
+
+async function loadCard(cardId: string): Promise<ScanResult> {
   const supabase = createClient();
-  const { data: card, error } = await supabase
+  const { data: card } = await supabase
     .from("cards")
     .select(
-      "id, stamps, points, customers(full_name), loyalty_programs(type, title, name, stamps_required, points_per_reward, reward_description, earning_mode, min_purchase_amount, amount_per_point)"
+      "id, stamps, points, status, program_id, customers(full_name), loyalty_programs(type, title, name, active, stamps_required, earning_mode, min_purchase_amount, amount_per_point)"
     )
     .eq("id", cardId)
-    .single();
-
-  if (error || !card) return { error: "Karte nicht gefunden." };
+    .maybeSingle();
+  if (!card) return { error: "Diese Karte gehört nicht zu deinem Betrieb oder existiert nicht." };
 
   const p = (card as any).loyalty_programs;
-  const isStamp = p?.type === "stamp";
-  const ready = isStamp ? card.stamps >= p.stamps_required : card.points >= p.points_per_reward;
+  const balance = p?.type === "stamp" ? card.stamps : card.points;
+  const { data: rewards } = await supabase
+    .from("rewards")
+    .select("id, title, cost_points, conditions, valid_from, valid_until")
+    .eq("program_id", card.program_id)
+    .eq("active", true)
+    .is("ended_at", null)
+    .order("cost_points", { ascending: true });
 
   return {
+    kind: "card",
     card: {
       id: card.id,
-      stamps: card.stamps,
-      points: card.points,
       type: p?.type ?? "stamp",
+      balance,
       stampsRequired: p?.stamps_required ?? 10,
-      pointsPerReward: p?.points_per_reward ?? 100,
-      rewardDescription: p?.reward_description ?? "",
       programTitle: p?.title ?? p?.name ?? "Programm",
+      programActive: Boolean(p?.active),
       customerName: (card as any).customers?.full_name ?? "Kunde",
-      ready,
       earningMode: p?.earning_mode ?? "manual",
       minPurchaseAmount: p?.min_purchase_amount ?? null,
       amountPerPoint: p?.amount_per_point ?? null,
+      status: card.status,
+      rewards: (rewards ?? [])
+        .filter((r: any) => rewardIsCurrent(r))
+        .map((r: any) => ({ id: r.id, title: r.title, cost: r.cost_points, conditions: r.conditions, available: r.cost_points <= balance })),
     },
   };
 }
 
-// Scan-Ergebnis: RLS sorgt automatisch dafür, dass eine Karte eines fremden
-// Betriebs schlicht "nicht gefunden" zurückgibt - kein zusätzlicher
-// manueller org_id-Check nötig, das übernimmt die DB-Policy.
-export async function lookupScannedCard(rawText: string): Promise<{ error?: string; card?: ScannedCard }> {
-  const serial = serialFromScan(rawText);
-  if (!serial) return { error: "QR-Code konnte nicht gelesen werden." };
+const CODE_SELECT =
+  "id, token, short_code, status, expires_at, card_id, rewards(title, cost_points), cards(stamps, points, customers(full_name), loyalty_programs(type))";
 
+function toCode(row: any): ScannedCode {
+  const type = row.cards?.loyalty_programs?.type ?? "stamp";
+  const expired = row.status === "pending" && new Date(row.expires_at).getTime() < Date.now();
+  return {
+    requestId: row.id,
+    token: row.token,
+    shortCode: row.short_code,
+    status: expired ? "expired" : row.status,
+    expiresAt: row.expires_at,
+    rewardTitle: row.rewards?.title ?? "Belohnung",
+    cost: row.rewards?.cost_points ?? 0,
+    type,
+    balance: type === "stamp" ? row.cards?.stamps ?? 0 : row.cards?.points ?? 0,
+    customerName: row.cards?.customers?.full_name ?? "Kunde",
+    cardId: row.card_id,
+  };
+}
+
+function codeProblem(c: ScannedCode): string | null {
+  if (c.status === "used") return "Dieser Einlöse-Code wurde bereits eingelöst.";
+  if (c.status === "expired") return "Dieser Einlöse-Code ist abgelaufen. Der Kunde kann in seinem Konto einen neuen anzeigen.";
+  if (c.status === "cancelled") return "Dieser Code wurde durch einen neueren ersetzt. Bitte den aktuellen Code scannen.";
+  return null;
+}
+
+// Vorschau eines gescannten Codes: Kundenkarte (URL/Seriennummer) oder
+// Einlöse-Code (36-stelliger Token). RLS liefert nur Daten des eigenen
+// Betriebs; fremde Karten/Codes erscheinen als "nicht gefunden".
+export async function lookupScan(rawText: string): Promise<ScanResult> {
+  const gate = await requireOrgRole("staff", { requireActive: false });
+  if (!gate.ok) return { error: gate.error };
   const supabase = createClient();
-  const { data: card, error } = await supabase.from("cards").select("id").eq("serial_number", serial).maybeSingle();
-  if (error || !card) return { error: "Diese Karte gehört nicht zu deinem Betrieb oder existiert nicht." };
 
+  const compact = rawText.trim().replace(/[^A-Za-z0-9]/g, "");
+  if (/^[0-9a-f]{36}$/i.test(compact)) {
+    const { data } = await supabase.from("redemption_requests").select(CODE_SELECT).eq("token", compact.toLowerCase()).maybeSingle();
+    if (!data) return { error: "Dieser Einlöse-Code ist ungültig oder gehört nicht zu deinem Betrieb." };
+    const code = toCode(data);
+    const problem = codeProblem(code);
+    return problem ? { error: problem } : { kind: "code", code };
+  }
+
+  const serial = serialFromInput(rawText);
+  if (!serial) return { error: "QR-Code konnte nicht gelesen werden." };
+  const { data: card } = await supabase.from("cards").select("id").eq("serial_number", serial).maybeSingle();
+  if (!card) return { error: "Diese Karte gehört nicht zu deinem Betrieb oder existiert nicht." };
   return loadCard(card.id);
 }
 
-export async function scanStamp(cardId: string, purchaseAmount?: number): Promise<{ error?: string; card?: ScannedCard }> {
-  const gate = await requireOrgRole("staff");
+export async function lookupShortCode(input: string): Promise<ScanResult> {
+  const gate = await requireOrgRole("staff", { requireActive: false });
   if (!gate.ok) return { error: gate.error };
-
-  const supabase = createClient();
-  const cooldownError = await checkStampCooldown(supabase, cardId);
-  if (cooldownError) return { error: cooldownError };
-
-  const { data: card, error: fetchErr } = await supabase
-    .from("cards")
-    .select("stamps, org_id, loyalty_programs(stamps_required, earning_mode, min_purchase_amount)")
-    .eq("id", cardId)
-    .single();
-  if (fetchErr || !card) return { error: "Karte nicht gefunden." };
-
-  const p = (card as any).loyalty_programs;
-  let units = 1;
-  if (p?.earning_mode === "amount") {
-    if (purchaseAmount === undefined || Number.isNaN(purchaseAmount) || purchaseAmount < 0) {
-      return { error: "Bitte gib den Einkaufsbetrag an." };
-    }
-    const result = unitsFromAmount(
-      { type: "stamp", earning_mode: p.earning_mode, min_purchase_amount: p.min_purchase_amount, amount_per_point: null },
-      purchaseAmount
-    );
-    if (result.units <= 0) return { error: result.error ?? "Kein Stempel fällig." };
-    units = result.units;
-  }
-
-  const req = p?.stamps_required ?? 10;
-  const next = Math.min(card.stamps + units, req);
-
-  const { error: updErr } = await supabase.from("cards").update({ stamps: next }).eq("id", cardId);
-  if (updErr) return { error: translateDbError(updErr.message) };
-
-  await supabase.from("transactions").insert({
-    org_id: card.org_id,
-    card_id: cardId,
-    type: "stamp",
-    amount: next - card.stamps,
-    note: p?.earning_mode === "amount" ? `Einkauf: ${purchaseAmount!.toFixed(2)} €` : null,
-    staff_id: gate.user.id,
-    location_id: gate.locationId,
-  });
-  notifyWalletsOfCardUpdate(cardId).catch(() => {});
-  revalidatePath("/dashboard");
-  return loadCard(cardId);
+  const code = input.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (code.length !== 6) return { error: "Der Kurzcode hat 6 Zeichen (Buchstaben und Ziffern)." };
+  const { data } = await createClient()
+    .from("redemption_requests")
+    .select(CODE_SELECT)
+    .eq("org_id", gate.org.id)
+    .eq("short_code", code)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return { error: "Kein offener Einlöse-Code mit diesem Kurzcode gefunden." };
+  const c = toCode(data);
+  const problem = codeProblem(c);
+  return problem ? { error: problem } : { kind: "code", code: c };
 }
 
-export async function scanAddPoints(cardId: string, purchaseAmount?: number): Promise<{ error?: string; card?: ScannedCard }> {
+export async function scanEarn(cardId: string, purchaseAmount: number | null, requestId: string): Promise<ScanResult & { message?: string }> {
   const gate = await requireOrgRole("staff");
   if (!gate.ok) return { error: gate.error };
-
-  const supabase = createClient();
-  const { data: card, error: fetchErr } = await supabase
-    .from("cards")
-    .select("points, org_id, loyalty_programs(earning_mode, amount_per_point)")
-    .eq("id", cardId)
-    .single();
-  if (fetchErr || !card) return { error: "Karte nicht gefunden." };
-
-  const p = (card as any).loyalty_programs;
-  let units = 10;
-  if (p?.earning_mode === "amount") {
-    if (purchaseAmount === undefined || Number.isNaN(purchaseAmount) || purchaseAmount < 0) {
-      return { error: "Bitte gib den Einkaufsbetrag an." };
-    }
-    const result = unitsFromAmount(
-      { type: "points", earning_mode: p.earning_mode, min_purchase_amount: null, amount_per_point: p.amount_per_point },
-      purchaseAmount
-    );
-    if (result.units <= 0) return { error: result.error ?? "Keine Punkte fällig." };
-    units = result.units;
-  }
-
-  const { error: updErr } = await supabase.from("cards").update({ points: card.points + units }).eq("id", cardId);
-  if (updErr) return { error: translateDbError(updErr.message) };
-
-  await supabase.from("transactions").insert({
-    org_id: card.org_id,
-    card_id: cardId,
-    type: "points",
-    amount: units,
-    note: p?.earning_mode === "amount" ? `Einkauf: ${purchaseAmount!.toFixed(2)} €` : null,
-    staff_id: gate.user.id,
-    location_id: gate.locationId,
-  });
-  notifyWalletsOfCardUpdate(cardId).catch(() => {});
+  const res = await earnOnCard(createClient(), cardId, purchaseAmount, requestId);
+  if (!res.ok) return { error: res.error };
   revalidatePath("/dashboard");
-  return loadCard(cardId);
+  const d = res.data;
+  const unit = d.type === "stamp" ? "Stempel" : d.units === 1 ? "Punkt" : "Punkte";
+  const next = await loadCard(cardId);
+  return { ...next, message: d.duplicate ? "Bereits gebucht" : `+${d.units} ${unit}${d.factor > 1 ? ` (Aktion ×${d.factor})` : ""}` };
 }
 
-export async function scanRedeem(cardId: string): Promise<{ error?: string; card?: ScannedCard }> {
+export async function scanRedeemReward(cardId: string, rewardId: string, requestId: string): Promise<ScanResult & { message?: string }> {
   const gate = await requireOrgRole("staff");
   if (!gate.ok) return { error: gate.error };
-
-  const supabase = createClient();
-  const { data: card, error: fetchErr } = await supabase
-    .from("cards")
-    .select("stamps, points, org_id, loyalty_programs(type, stamps_required, points_per_reward)")
-    .eq("id", cardId)
-    .single();
-  if (fetchErr || !card) return { error: "Karte nicht gefunden." };
-
-  const p = (card as any).loyalty_programs;
-  const isStamp = p?.type === "stamp";
-  const ready = isStamp ? card.stamps >= p.stamps_required : card.points >= p.points_per_reward;
-  if (!ready) return { error: "Belohnung ist noch nicht freigeschaltet." };
-
-  const update = isStamp ? { stamps: 0 } : { points: card.points - p.points_per_reward };
-  const { error: updErr } = await supabase.from("cards").update(update).eq("id", cardId);
-  if (updErr) return { error: translateDbError(updErr.message) };
-
-  await supabase.from("reward_redemptions").insert({ org_id: card.org_id, card_id: cardId, staff_id: gate.user.id });
-  await supabase.from("transactions").insert({
-    org_id: card.org_id,
-    card_id: cardId,
-    type: "redeem",
-    amount: 1,
-    staff_id: gate.user.id,
-    location_id: gate.locationId,
-  });
-  notifyWalletsOfCardUpdate(cardId).catch(() => {});
+  const res = await redeemReward(createClient(), cardId, rewardId, requestId);
+  if (!res.ok) return { error: res.error };
   revalidatePath("/dashboard");
-  return loadCard(cardId);
+  const next = await loadCard(cardId);
+  return { ...next, message: res.data.duplicate ? "Bereits eingelöst" : `Eingelöst: ${res.data.reward_title ?? "Belohnung"}` };
+}
+
+export async function scanRedeemCode(token: string, requestId: string): Promise<{ error?: string; message?: string }> {
+  const gate = await requireOrgRole("staff");
+  if (!gate.ok) return { error: gate.error };
+  const res = await redeemWithCode(createClient(), token, requestId);
+  if (!res.ok) return { error: res.error };
+  revalidatePath("/dashboard");
+  return { message: res.data.duplicate ? "Bereits eingelöst" : `Eingelöst: ${res.data.reward_title ?? "Belohnung"}` };
 }

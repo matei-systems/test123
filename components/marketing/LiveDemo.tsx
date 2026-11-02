@@ -148,7 +148,7 @@ export default function LiveDemo() {
                 type="button"
                 onClick={() => setType(ty)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  type === ty ? "bg-white/[0.08] text-[color:var(--lp-text)]" : "text-faint hover:text-[color:var(--lp-text)]"
+                  type === ty ? "bg-fg/[0.07] text-[color:var(--lp-text)]" : "text-faint hover:text-[color:var(--lp-text)]"
                 }`}
               >
                 {ty === "stamp" ? t.demo.typeStamp : t.demo.typePoints}
@@ -170,7 +170,7 @@ export default function LiveDemo() {
                 type="button"
                 onClick={() => setBaseMode(m)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  baseMode === m ? "bg-white/[0.08] text-[color:var(--lp-text)]" : "text-faint hover:text-[color:var(--lp-text)]"
+                  baseMode === m ? "bg-fg/[0.07] text-[color:var(--lp-text)]" : "text-faint hover:text-[color:var(--lp-text)]"
                 }`}
               >
                 {m === "gradient" ? t.demo.baseModeGradient : t.demo.baseModeColor}

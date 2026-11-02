@@ -10,7 +10,7 @@ export default function StatTile({
   tone?: "default" | "good" | "warning" | "critical";
 }) {
   const toneColor =
-    tone === "good" ? "#86EFAC" : tone === "warning" ? "#E8B573" : tone === "critical" ? "#FCA5A5" : "#F4F1EC";
+    tone === "good" ? "rgb(var(--forest))" : tone === "warning" ? "rgb(var(--accent))" : tone === "critical" ? "rgb(var(--danger))" : "rgb(var(--fg))";
   return (
     <div className="card p-5">
       <div className="text-xs uppercase tracking-wide text-faint mb-2">{label}</div>

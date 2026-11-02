@@ -29,10 +29,16 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Geschützte Routen: ohne Login -> zum Login umleiten
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  // Geschützte Bereiche: ohne Login -> zum Login, Ziel wird als ?next
+  // gemerkt (nur der Pfad, Query bleibt erhalten). Die eigentliche
+  // Berechtigungsprüfung passiert zusätzlich in den Layouts/Actions.
+  const path = request.nextUrl.pathname;
+  const protectedArea = ["/dashboard", "/konto", "/admin"].some((p) => path === p || path.startsWith(p + "/"));
+  if (!user && protectedArea) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.search = "";
+    url.searchParams.set("next", path + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
   return response;

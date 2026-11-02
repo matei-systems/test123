@@ -1,7 +1,7 @@
 import LegalLayout from "@/components/legal/LegalLayout";
 import { COMPANY, LEGAL_LAST_UPDATED } from "@/lib/legal/company-info";
 
-export const metadata = { title: "Datenschutzerklärung – Matei Loyalty" };
+export const metadata = { title: "Datenschutzerklärung" };
 
 export default function DatenschutzPage() {
   return (
@@ -19,15 +19,16 @@ export default function DatenschutzPage() {
       </section>
 
       <section>
-        <h2>2. Zwei Rollen: Matei Loyalty als Anbieter und als Auftragsverarbeiter</h2>
+        <h2>2. Zwei Rollen: Matei Systems als Anbieter und als Auftragsverarbeiter</h2>
         <p>
-          Matei Loyalty ist eine Software-as-a-Service-Plattform für digitale Treuekarten. Dabei verarbeiten wir
+          Matei Systems ist eine Plattform für digitale Treuekarten lokaler Geschäfte. Dabei verarbeiten wir
           personenbezogene Daten in zwei unterschiedlichen Rollen:
         </p>
         <ul>
           <li>
             Als <strong>Verantwortlicher</strong> für die Daten der Betriebe, die bei uns ein Konto anlegen
-            (Kontaktdaten des Inhabers, Team-Mitglieder, Zahlungsdaten) – dazu unten mehr.
+            (Kontaktdaten des Inhabers, Team-Mitglieder, Zahlungsdaten), sowie für die Kundenkonten von
+            Endkundinnen und Endkunden (Abschnitt 8a), das Kontaktformular und Meldungen – dazu unten mehr.
           </li>
           <li>
             Als <strong>Auftragsverarbeiter</strong> für die Endkundendaten, die ein Betrieb über seine
@@ -41,12 +42,16 @@ export default function DatenschutzPage() {
       </section>
 
       <section>
-        <h2>3. Registrierung und Nutzerkonto</h2>
+        <h2>3. Registrierung, Nutzerkonto und Hosting</h2>
         <p>
-          Bei der Registrierung eines Betriebs erheben wir E-Mail-Adresse und ein verschlüsseltes Passwort.
-          Die Authentifizierung erfolgt über unseren Infrastruktur-Anbieter Supabase (Supabase Inc.), der
-          Datenbank, Login und Nutzerverwaltung bereitstellt. Rechtsgrundlage ist die Erfüllung des
-          Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO).
+          Bei der Registrierung (Betrieb oder Kundin/Kunde) erheben wir E-Mail-Adresse, optional den Namen
+          und ein verschlüsselt gespeichertes Passwort sowie den Zeitpunkt der Zustimmung zu AGB und
+          Datenschutzerklärung. Die Authentifizierung erfolgt über unseren Infrastruktur-Anbieter Supabase
+          (Supabase Inc.), der Datenbank, Login und Nutzerverwaltung bereitstellt; die Datenbank befindet sich
+          in der EU (Paris). Die Website wird über Vercel Inc. ausgeliefert; dabei fallen technisch notwendige
+          Server-Protokolle (z. B. IP-Adresse, Zeitpunkt, aufgerufene Seite) an. Rechtsgrundlage ist die
+          Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO) bzw. unser berechtigtes Interesse am
+          sicheren Betrieb (Art. 6 Abs. 1 lit. f DSGVO).
         </p>
       </section>
 
@@ -85,10 +90,12 @@ export default function DatenschutzPage() {
       <section>
         <h2>7. Cookies</h2>
         <p>
-          Wir setzen ausschließlich technisch notwendige Cookies ein, um die Anmeldung (Session) aufrecht zu
-          erhalten. Diese Cookies fallen unter § 165 Abs. 3 TKG 2021 bzw. Art. 6 Abs. 1 lit. f DSGVO und
-          bedürfen keiner gesonderten Einwilligung. Wir setzen aktuell keine Analyse-, Marketing- oder
-          Tracking-Cookies ein.
+          Wir setzen ausschließlich technisch notwendige Cookies ein: zur Aufrechterhaltung der Anmeldung
+          (Session) und – wenn du ohne Konto eine Treuekarte erstellst – ein Cookie, das die auf diesem Gerät
+          erstellten Karten wiedererkennt, damit keine doppelten Karten entstehen. Die Wahl zwischen hellem und
+          dunklem Design wird nur lokal im Browser gespeichert. Diese Speicherungen fallen unter § 165 Abs. 3
+          TKG 2021 bzw. Art. 6 Abs. 1 lit. f DSGVO und bedürfen keiner gesonderten Einwilligung. Wir setzen
+          keine Analyse-, Marketing- oder Tracking-Cookies ein.
         </p>
       </section>
 
@@ -101,6 +108,51 @@ export default function DatenschutzPage() {
           weitergegeben (mit Ausnahme der in Abschnitt 5 genannten Übermittlung an Apple/Google bei aktiver
           Wallet-Nutzung durch den Endkunden selbst). Anfragen zu diesen Daten (Auskunft, Löschung) richten
           Endkunden bitte direkt an den jeweiligen Betrieb, bei dem sie Kunde sind.
+        </p>
+      </section>
+
+      <section>
+        <h2>8a. Kundenkonten für Endkundinnen und Endkunden</h2>
+        <p>
+          Mit einem kostenlosen Kundenkonto kannst du Treuekarten verschiedener Geschäfte an einem Ort
+          verwalten. Dafür verarbeiten wir als Verantwortliche: deine Kontodaten (E-Mail, Name, Passwort), die
+          Zuordnung deiner Karten zu deinem Konto, die Buchungen auf diesen Karten zur Anzeige in deinem
+          Verlauf sowie Einlöse-Codes (10 Minuten gültig). Rechtsgrundlage ist die Vertragserfüllung (Art. 6
+          Abs. 1 lit. b DSGVO).
+        </p>
+        <p>
+          Holst du dir mit deinem Konto eine Karte bei einem Geschäft, erhält dieses Geschäft deinen Namen als
+          Kundendatensatz, nicht aber deine E-Mail-Adresse. Ein Geschäft sieht nur die Karten und Buchungen bei
+          ihm selbst, nie deine Karten bei anderen Geschäften.
+        </p>
+        <p>
+          Unter „Konto → Profil“ kannst du jederzeit alle deinem Konto zugeordneten Daten herunterladen (Art. 15,
+          20 DSGVO) und dein Konto selbst löschen (Art. 17 DSGVO). Beim Löschen werden Konto, Profil und offene
+          Einlöse-Codes gelöscht und deine Karten vom Konto getrennt; die Kundendatensätze und Buchungen bei
+          den Geschäften bleiben als deren Aufzeichnungen bestehen (siehe Abschnitt 8) und können dort gelöscht
+          werden.
+        </p>
+      </section>
+
+      <section>
+        <h2>8b. Geschäftsverzeichnis, Kontaktformular und Meldungen</h2>
+        <p>
+          Geschäfte können ein öffentliches Profil (z. B. Name, Beschreibung, Adresse, Öffnungszeiten,
+          Kontaktdaten) veröffentlichen; die Angaben stammen vom jeweiligen Geschäft und erscheinen erst nach
+          unserer Prüfung. Anfragen über das Kontaktformular (Name, E-Mail, Nachricht) und Meldungen von
+          Profilen (Grund, Nachricht, optional E-Mail) speichern wir zur Bearbeitung (Art. 6 Abs. 1 lit. b
+          bzw. f DSGVO) und löschen sie, wenn sie nicht mehr benötigt werden.
+        </p>
+      </section>
+
+      <section>
+        <h2>8c. Missbrauchsschutz</h2>
+        <p>
+          Zum Schutz vor Missbrauch begrenzen wir die Zahl bestimmter Anfragen je IP-Adresse (z. B. Anmeldung,
+          Registrierung, Kontaktformular) und markieren auffällige Buchungsmuster (z. B. sehr viele Stempel auf
+          einer Karte in kurzer Zeit) automatisch zur Prüfung durch unser Team. Es erfolgt keine automatisierte
+          Entscheidung mit rechtlicher Wirkung; jede Markierung wird von einem Menschen geprüft. Rechtsgrundlage
+          ist unser berechtigtes Interesse an einer fairen und sicheren Plattform (Art. 6 Abs. 1 lit. f DSGVO).
         </p>
       </section>
 

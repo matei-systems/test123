@@ -42,7 +42,7 @@ export default function GrowthChart({ data }: { data: { date: string; count: num
                 width={Math.max(1, barW)}
                 height={barH}
                 rx={Math.min(3, barW / 2)}
-                fill={isHover ? "#F6D19A" : "#E8B573"}
+                fill={isHover ? "rgb(var(--accent))" : "rgb(var(--accent))"}
                 opacity={isHover ? 1 : 0.85}
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover((h) => (h === i ? null : h))}
@@ -60,7 +60,7 @@ export default function GrowthChart({ data }: { data: { date: string; count: num
               transform: "translate(-50%, -100%)",
               background: "#1A1620",
               border: "1px solid rgba(255,255,255,0.12)",
-              color: "#F4F1EC",
+              color: "rgb(var(--fg))",
               whiteSpace: "nowrap",
             }}
           >

@@ -17,11 +17,11 @@ const STATUS_LABEL: Record<string, string> = {
   paused: "Pausiert",
 };
 const STATUS_COLOR: Record<string, { bg: string; fg: string }> = {
-  active: { bg: "rgba(74,222,128,0.12)", fg: "#86EFAC" },
-  trialing: { bg: "rgba(232,181,115,0.14)", fg: "#E8B573" },
-  past_due: { bg: "rgba(239,68,68,0.12)", fg: "#FCA5A5" },
-  unpaid: { bg: "rgba(239,68,68,0.12)", fg: "#FCA5A5" },
-  canceled: { bg: "rgba(148,148,148,0.14)", fg: "#C9C4BC" },
+  active: { bg: "rgb(var(--forest) / 0.12)", fg: "rgb(var(--forest))" },
+  trialing: { bg: "rgb(var(--accent-strong) / 0.14)", fg: "rgb(var(--accent))" },
+  past_due: { bg: "rgb(var(--danger) / 0.1)", fg: "rgb(var(--danger))" },
+  unpaid: { bg: "rgb(var(--danger) / 0.1)", fg: "rgb(var(--danger))" },
+  canceled: { bg: "rgb(var(--fg) / 0.06)", fg: "rgb(var(--muted))" },
 };
 
 function fmtEUR(cents: number): string {
@@ -80,7 +80,7 @@ export default async function AdminSubscriptionsPage({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="card p-5">
           <div className="text-xs uppercase tracking-wide text-faint mb-1">MRR gesamt</div>
-          <div className="text-xl font-extrabold text-[#86EFAC]">{fmtEUR(stats.mrrCents)}</div>
+          <div className="text-xl font-extrabold text-forest">{fmtEUR(stats.mrrCents)}</div>
         </div>
         {stats.planBreakdown.map((p) => (
           <div key={p.planId} className="card p-5">
@@ -119,7 +119,7 @@ export default async function AdminSubscriptionsPage({
       <div className="card overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/[0.06] text-left text-xs uppercase tracking-wide text-faint">
+            <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-faint">
               <th className="p-4 font-medium">Betrieb</th>
               <th className="p-4 font-medium">Tarif</th>
               <th className="p-4 font-medium">Status</th>
@@ -132,7 +132,7 @@ export default async function AdminSubscriptionsPage({
               const color = STATUS_COLOR[org.subscription_status] ?? STATUS_COLOR.canceled;
               const isActive = org.subscription_status === "active";
               return (
-                <tr key={org.id} className="border-b border-white/[0.06] last:border-b-0 hover:bg-white/[0.02]">
+                <tr key={org.id} className="border-b border-line last:border-b-0 hover:bg-fg/[0.03]">
                   <td className="p-4">
                     <Link href={`/admin/organizations/${org.id}`} className="font-medium text-gold hover:text-gold-bright">
                       {org.name}

@@ -51,7 +51,7 @@ function LocationForm({
       <input className="input" placeholder="Adresse" value={input.address} onChange={(e) => set("address", e.target.value)} />
       <input className="input" placeholder="Stadt" value={input.city} onChange={(e) => set("city", e.target.value)} />
       <input className="input" placeholder="PLZ" value={input.postalCode} onChange={(e) => set("postalCode", e.target.value)} />
-      {error && <div className="text-xs text-[#FCA5A5] md:col-span-2">{error}</div>}
+      {error && <div className="text-xs text-danger md:col-span-2">{error}</div>}
       <div className="flex gap-2 md:col-span-2">
         <button type="submit" disabled={pending} className="btn btn-primary text-sm">
           {pending ? "Wird gespeichert…" : "Speichern"}
@@ -98,7 +98,7 @@ function LocationCard({ location, onRemoved }: { location: Location; onRemoved: 
       <div className="min-w-0">
         <div className="font-medium text-sm">{current.name}</div>
         {(current.address || current.city) && (
-          <div className="text-xs text-[#A6A099]">{[current.address, current.postal_code, current.city].filter(Boolean).join(", ")}</div>
+          <div className="text-xs text-muted">{[current.address, current.postal_code, current.city].filter(Boolean).join(", ")}</div>
         )}
       </div>
       <div className="flex items-center gap-2 shrink-0">
@@ -117,7 +117,7 @@ function LocationCard({ location, onRemoved }: { location: Location; onRemoved: 
                 })
               }
               className="btn text-xs"
-              style={{ background: "rgba(239,68,68,0.15)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.3)" }}
+              style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))", border: "1px solid rgb(var(--danger) / 0.3)" }}
             >
               {pending ? "…" : "Sicher?"}
             </button>
@@ -168,7 +168,7 @@ export default function LocationManager({ locations }: { locations: Location[] }
         {items.map((l) => (
           <LocationCard key={l.id} location={l} onRemoved={(id) => setItems((prev) => prev.filter((x) => x.id !== id))} />
         ))}
-        {items.length === 0 && <div className="text-[#6E685F] text-sm">Noch keine Standorte angelegt.</div>}
+        {items.length === 0 && <div className="text-faint text-sm">Noch keine Standorte angelegt.</div>}
       </div>
     </div>
   );

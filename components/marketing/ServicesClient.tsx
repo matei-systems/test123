@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import ScrollNav from "@/components/marketing/ScrollNav";
 import Reveal from "@/components/marketing/Reveal";
 import SpotlightCard from "@/components/marketing/SpotlightCard";
 import ThemeProvider, { useTheme } from "@/components/marketing/ThemeProvider";
@@ -42,10 +41,9 @@ function Content() {
   const year = new Date().getFullYear();
 
   return (
-    <main className="overflow-x-hidden">
-      <ScrollNav />
+    <div className="overflow-x-hidden">
 
-      <header className="relative pt-[140px] pb-16 overflow-hidden">
+      <section className="relative pt-12 md:pt-20 pb-16 overflow-hidden">
         <div
           className="pointer-events-none absolute -top-[15%] left-1/2 -translate-x-1/2 w-[700px] h-[520px] rounded-full"
           style={{ background: "radial-gradient(closest-side, var(--lp-line-2), transparent 70%)" }}
@@ -57,7 +55,7 @@ function Content() {
             <p className="text-dim text-base sm:text-lg max-w-[560px] mx-auto">{t.services.lead}</p>
           </Reveal>
         </div>
-      </header>
+      </section>
 
       <section className="pb-20">
         <div className="max-w-[900px] mx-auto px-6 grid gap-5 sm:grid-cols-2">
@@ -93,7 +91,7 @@ function Content() {
                 <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
                   {t.services.ctaButton}
                 </a>
-                <Link href="/" className="btn btn-ghost">
+                <Link href="/fuer-geschaefte" className="btn btn-ghost">
                   {t.services.backToLoyalty}
                 </Link>
               </div>
@@ -102,32 +100,7 @@ function Content() {
         </div>
       </section>
 
-      <footer className="border-t border-line py-11">
-        <div className="max-w-[1160px] mx-auto px-6 flex flex-wrap items-center justify-between gap-5 text-faint text-sm">
-          <Link href="/" className="flex items-center gap-2.5 font-bold text-[color:var(--lp-text)]">
-            <div className="w-8 h-8 rounded-[9px] grid place-items-center font-extrabold text-[#241a0c] bg-gold-grad">M</div>
-            {COMPANY.tradingName}
-          </Link>
-          <div className="flex items-center gap-4 flex-wrap">
-            <span>
-              {COMPANY.city} · {COMPANY.country}
-            </span>
-            <Link href="/impressum" className="hover:text-gold-bright">
-              {t.footer.impressum}
-            </Link>
-            <Link href="/datenschutz" className="hover:text-gold-bright">
-              {t.footer.datenschutz}
-            </Link>
-            <Link href="/agb" className="hover:text-gold-bright">
-              {t.footer.agb}
-            </Link>
-          </div>
-          <div>
-            © {year} {COMPANY.tradingName}
-          </div>
-        </div>
-      </footer>
-    </main>
+    </div>
   );
 }
 

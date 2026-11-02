@@ -6,10 +6,10 @@ export const dynamic = "force-dynamic";
 const PAGE_SIZE = 25;
 const STATUS_LABEL: Record<string, string> = { open: "Offen", in_progress: "In Bearbeitung", resolved: "Gelöst", closed: "Geschlossen" };
 const STATUS_COLOR: Record<string, { bg: string; fg: string }> = {
-  open: { bg: "rgba(232,181,115,0.14)", fg: "#E8B573" },
-  in_progress: { bg: "rgba(96,165,250,0.14)", fg: "#93C5FD" },
-  resolved: { bg: "rgba(74,222,128,0.12)", fg: "#86EFAC" },
-  closed: { bg: "rgba(148,148,148,0.14)", fg: "#C9C4BC" },
+  open: { bg: "rgb(var(--accent-strong) / 0.14)", fg: "rgb(var(--accent))" },
+  in_progress: { bg: "rgb(var(--info) / 0.1)", fg: "rgb(var(--info))" },
+  resolved: { bg: "rgb(var(--forest) / 0.12)", fg: "rgb(var(--forest))" },
+  closed: { bg: "rgb(var(--fg) / 0.06)", fg: "rgb(var(--muted))" },
 };
 const PRIORITY_LABEL: Record<string, string> = { low: "Niedrig", normal: "Normal", high: "Hoch", urgent: "Dringend" };
 
@@ -80,7 +80,7 @@ export default async function AdminSupportPage({
       <div className="card overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/[0.06] text-left text-xs uppercase tracking-wide text-faint">
+            <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-faint">
               <th className="p-4 font-medium">Betreff</th>
               <th className="p-4 font-medium">Betrieb</th>
               <th className="p-4 font-medium">Priorität</th>
@@ -92,7 +92,7 @@ export default async function AdminSupportPage({
             {(tickets ?? []).map((t: any) => {
               const color = STATUS_COLOR[t.status] ?? STATUS_COLOR.open;
               return (
-                <tr key={t.id} className="border-b border-white/[0.06] last:border-b-0 hover:bg-white/[0.02]">
+                <tr key={t.id} className="border-b border-line last:border-b-0 hover:bg-fg/[0.03]">
                   <td className="p-4">
                     <Link href={`/admin/support/${t.id}`} className="font-medium text-gold hover:text-gold-bright">
                       {t.subject}

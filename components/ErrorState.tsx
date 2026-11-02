@@ -22,8 +22,8 @@ export default function ErrorState({
 
   const content = (
     <div className="max-w-md w-full text-center">
-      <div className="w-12 h-12 mx-auto mb-5 rounded-xl grid place-items-center bg-[rgba(239,68,68,0.12)]">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FCA5A5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div className="w-12 h-12 mx-auto mb-5 rounded-xl grid place-items-center bg-danger/[0.12]">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--danger))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 3.82 21h16.36a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
         </svg>
       </div>
@@ -46,5 +46,5 @@ export default function ErrorState({
     return <div className="p-8 flex items-center justify-center min-h-[50vh]">{content}</div>;
   }
 
-  return <main className="min-h-screen flex items-center justify-center px-6 bg-ink text-[#F4F1EC]">{content}</main>;
+  return <main className="min-h-screen flex items-center justify-center px-6 bg-ink text-fg">{content}</main>;
 }

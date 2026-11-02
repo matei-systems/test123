@@ -19,7 +19,7 @@ const STATUS_LABEL: Record<string, string> = {
 function StatusBadge({ org }: { org: any }) {
   if (org.admin_suspended) {
     return (
-      <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(239,68,68,0.14)", color: "#FCA5A5" }}>
+      <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))" }}>
         Gesperrt
       </span>
     );
@@ -28,7 +28,7 @@ function StatusBadge({ org }: { org: any }) {
   const isRestricted =
     ["past_due", "unpaid", "canceled", "incomplete", "incomplete_expired", "paused"].includes(status) ||
     (status === "none" && org.trial_ends_at && new Date(org.trial_ends_at).getTime() <= Date.now());
-  const color = status === "active" ? { bg: "rgba(74,222,128,0.12)", fg: "#86EFAC" } : isRestricted ? { bg: "rgba(239,68,68,0.12)", fg: "#FCA5A5" } : { bg: "rgba(232,181,115,0.14)", fg: "#E8B573" };
+  const color = status === "active" ? { bg: "rgb(var(--forest) / 0.12)", fg: "rgb(var(--forest))" } : isRestricted ? { bg: "rgb(var(--danger) / 0.1)", fg: "rgb(var(--danger))" } : { bg: "rgb(var(--accent-strong) / 0.14)", fg: "rgb(var(--accent))" };
   const label = isRestricted && status === "none" ? "Testphase abgelaufen" : STATUS_LABEL[status] ?? status;
   return (
     <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: color.bg, color: color.fg }}>
@@ -126,7 +126,7 @@ export default async function AdminOrganizationsPage({
       <div className="card overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/[0.06] text-left text-xs uppercase tracking-wide text-faint">
+            <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-faint">
               <th className="p-4 font-medium">Name</th>
               <th className="p-4 font-medium">Tarif</th>
               <th className="p-4 font-medium">Status</th>
@@ -135,7 +135,7 @@ export default async function AdminOrganizationsPage({
           </thead>
           <tbody>
             {(orgs ?? []).map((org: any) => (
-              <tr key={org.id} className="border-b border-white/[0.06] last:border-b-0 hover:bg-white/[0.02]">
+              <tr key={org.id} className="border-b border-line last:border-b-0 hover:bg-fg/[0.03]">
                 <td className="p-4">
                   <Link href={`/admin/organizations/${org.id}`} className="font-medium text-gold hover:text-gold-bright">
                     {org.name}

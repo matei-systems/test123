@@ -38,11 +38,11 @@ export default async function EditProgramPage({ params }: { params: { id: string
 
   return (
     <div>
-      <Link href={`/dashboard/programs/${params.id}`} className="text-sm text-[#A6A099] hover:text-gold-bright transition-colors">
+      <Link href={`/dashboard/programs/${params.id}`} className="text-sm text-muted hover:text-gold-bright transition-colors">
         ← {program.title}
       </Link>
       <h1 className="text-2xl font-bold tracking-tight mt-3 mb-1">Programm bearbeiten</h1>
-      <p className="text-[#A6A099] text-sm mb-6">Änderungen wirken sich auf alle bereits ausgegebenen Karten aus.</p>
+      <p className="text-muted text-sm mb-6">Änderungen wirken sich auf alle bereits ausgegebenen Karten aus.</p>
       <ProgramWizard mode="edit" programId={params.id} initial={initial} />
     </div>
   );

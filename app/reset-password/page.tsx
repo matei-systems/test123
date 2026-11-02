@@ -20,13 +20,13 @@ export default async function ResetPasswordPage({
   if (!user) {
     return (
       <AuthShell eyebrow="Link ungültig" title="Link abgelaufen">
-        <div className="text-sm text-[#F4F1EC] leading-relaxed">
+        <div className="text-sm text-fg leading-relaxed">
           Dieser Link zum Zurücksetzen des Passworts ist ungültig oder wurde bereits verwendet.
         </div>
         <div className="mt-6">
           <Link
             href="/forgot-password"
-            className="inline-flex w-full items-center justify-center px-5 py-3 rounded-xl text-[15px] font-semibold bg-gold-grad text-[#241a0c]"
+            className="inline-flex w-full items-center justify-center px-5 py-3 rounded-xl text-[15px] font-semibold bg-gold-grad text-on-accent"
           >
             Neuen Link anfordern
           </Link>
@@ -44,18 +44,18 @@ export default async function ResetPasswordPage({
           type="password"
           name="password"
           required
-          minLength={6}
+          minLength={8}
           autoComplete="new-password"
-          placeholder="mind. 6 Zeichen"
+          placeholder="mind. 8 Zeichen"
         />
         <Field
           label="Neues Passwort bestätigen"
           type="password"
           name="passwordConfirm"
           required
-          minLength={6}
+          minLength={8}
           autoComplete="new-password"
-          placeholder="mind. 6 Zeichen"
+          placeholder="mind. 8 Zeichen"
         />
         <div className="mb-5" />
         <SubmitButton pendingText="Wird gespeichert…">Passwort speichern</SubmitButton>

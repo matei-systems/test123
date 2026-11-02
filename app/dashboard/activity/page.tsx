@@ -58,7 +58,7 @@ export default async function ActivityPage({
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight mb-1">Aktivität</h1>
-        <p className="text-[#A6A099] text-sm">Wer hat wann welchen Stempel vergeben oder eine Belohnung eingelöst.</p>
+        <p className="text-muted text-sm">Wer hat wann welchen Stempel vergeben oder eine Belohnung eingelöst.</p>
       </div>
 
       <form method="get" className="card p-4 mb-5 flex flex-wrap gap-3 items-end">
@@ -111,7 +111,7 @@ export default async function ActivityPage({
                 <div className="text-sm font-medium">
                   {TYPE_LABEL[t.type] ?? t.type} · {customer}
                 </div>
-                <div className="text-xs text-[#A6A099]">
+                <div className="text-xs text-muted">
                   {program}
                   {t.locations?.name && ` · ${t.locations.name}`} ·{" "}
                   {staff ? staff.full_name || staff.email : "Unbekannt (manuell/System)"}
@@ -130,7 +130,7 @@ export default async function ActivityPage({
           );
         })}
         {(!transactions || transactions.length === 0) && (
-          <div className="text-[#6E685F] text-sm">Noch keine Aktivität{hasFilters ? " für diesen Filter" : ""}.</div>
+          <div className="text-faint text-sm">Noch keine Aktivität{hasFilters ? " für diesen Filter" : ""}.</div>
         )}
       </div>
     </div>

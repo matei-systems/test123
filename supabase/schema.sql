@@ -785,3 +785,11 @@ create index if not exists idx_customers_org_email on customers(org_id, email);
 alter table loyalty_programs add column if not exists earning_mode text not null default 'manual';
 alter table loyalty_programs add column if not exists min_purchase_amount numeric(10,2);
 alter table loyalty_programs add column if not exists amount_per_point numeric(10,2);
+
+-- ============================================================================
+--  P18 (Plattform: Kundenkonten, Geschäftsprofile, Rewards, Aktionen,
+--  Buchungsfunktionen, Moderation) liegt in eigenen Dateien und wird NACH
+--  dieser Datei ausgeführt:
+--    1. supabase/p18_platform.sql  (additiv, mit alter und neuer App kompatibel)
+--    2. supabase/p18_lockdown.sql  (erst wenn die neue App-Version live ist)
+-- ============================================================================

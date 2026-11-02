@@ -38,27 +38,27 @@ export default async function TeamPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight mb-1">Team</h1>
-        <p className="text-[#A6A099] text-sm">
+        <p className="text-muted text-sm">
           Deine Rolle: <span className="text-gold-bright font-medium">{ROLE_LABEL[role ?? "staff"]}</span>
         </p>
       </div>
 
       {isAdmin && (
         <div className="card p-5 mb-6 enter">
-          <div className="font-semibold text-sm text-[#F4F1EC] mb-3">Mitarbeiter einladen</div>
+          <div className="font-semibold text-sm text-fg mb-3">Mitarbeiter einladen</div>
           <InviteForm canInviteAdmin={role === "owner"} />
         </div>
       )}
 
       {isAdmin && invitations.length > 0 && (
         <div className="mb-6 enter" style={{ animationDelay: "40ms" }}>
-          <div className="font-semibold text-sm text-[#F4F1EC] mb-3">Offene Einladungen ({invitations.length})</div>
+          <div className="font-semibold text-sm text-fg mb-3">Offene Einladungen ({invitations.length})</div>
           <InvitationsList invitations={invitations} />
         </div>
       )}
 
       <div className="enter" style={{ animationDelay: "80ms" }}>
-        <div className="font-semibold text-sm text-[#F4F1EC] mb-3">Mitglieder ({memberships?.length ?? 0})</div>
+        <div className="font-semibold text-sm text-fg mb-3">Mitglieder ({memberships?.length ?? 0})</div>
         <MembersTable
           members={(memberships ?? []) as any}
           locations={locations ?? []}

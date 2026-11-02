@@ -9,10 +9,10 @@ export const dynamic = "force-dynamic";
 
 const STATUS_LABEL: Record<string, string> = { open: "Offen", in_progress: "In Bearbeitung", resolved: "Gelöst", closed: "Geschlossen" };
 const STATUS_COLOR: Record<string, { bg: string; fg: string }> = {
-  open: { bg: "rgba(232,181,115,0.14)", fg: "#E8B573" },
-  in_progress: { bg: "rgba(96,165,250,0.14)", fg: "#93C5FD" },
-  resolved: { bg: "rgba(74,222,128,0.12)", fg: "#86EFAC" },
-  closed: { bg: "rgba(148,148,148,0.14)", fg: "#C9C4BC" },
+  open: { bg: "rgb(var(--accent-strong) / 0.14)", fg: "rgb(var(--accent))" },
+  in_progress: { bg: "rgb(var(--info) / 0.1)", fg: "rgb(var(--info))" },
+  resolved: { bg: "rgb(var(--forest) / 0.12)", fg: "rgb(var(--forest))" },
+  closed: { bg: "rgb(var(--fg) / 0.06)", fg: "rgb(var(--muted))" },
 };
 
 function fmtDate(iso: string | null): string {
@@ -39,7 +39,7 @@ export default async function SupportPage({ searchParams }: { searchParams: { er
       </div>
 
       {searchParams?.error && (
-        <div className="mb-5 text-sm rounded-lg px-3 py-2.5" style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+        <div className="mb-5 text-sm rounded-lg px-3 py-2.5" style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))" }}>
           {searchParams.error}
         </div>
       )}
@@ -67,7 +67,7 @@ export default async function SupportPage({ searchParams }: { searchParams: { er
             {(tickets ?? []).map((t: any) => {
               const color = STATUS_COLOR[t.status] ?? STATUS_COLOR.open;
               return (
-                <tr key={t.id} className="border-b border-white/[0.06] last:border-b-0 hover:bg-white/[0.02]">
+                <tr key={t.id} className="border-b border-line last:border-b-0 hover:bg-fg/[0.03]">
                   <td className="p-4">
                     <Link href={`/dashboard/support/${t.id}`} className="font-medium text-gold hover:text-gold-bright">
                       {t.subject}

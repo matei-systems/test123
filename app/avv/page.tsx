@@ -2,7 +2,7 @@ import LegalLayout from "@/components/legal/LegalLayout";
 import PrintButton from "@/components/join/PrintButton";
 import { COMPANY, LEGAL_LAST_UPDATED, AVV_VERSION } from "@/lib/legal/company-info";
 
-export const metadata = { title: "Auftragsverarbeitungsvertrag (AVV) – Matei Loyalty" };
+export const metadata = { title: "Auftragsverarbeitungsvertrag (AVV)" };
 
 export default function AvvPage() {
   return (

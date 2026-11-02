@@ -1,7 +1,7 @@
 import LegalLayout from "@/components/legal/LegalLayout";
 import { COMPANY, LEGAL_LAST_UPDATED } from "@/lib/legal/company-info";
 
-export const metadata = { title: "Impressum – Matei Loyalty" };
+export const metadata = { title: "Impressum" };
 
 export default function ImpressumPage() {
   return (

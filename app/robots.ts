@@ -10,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
         // Dashboard/Admin sind ohnehin loginpflichtig (nichts Sensibles wird
         // dadurch "versteckt"), aber sie gehören nicht in einen Suchindex -
         // reine Anwendungsoberfläche, kein öffentlicher Inhalt.
-        disallow: ["/dashboard", "/admin", "/api"],
+        disallow: ["/dashboard", "/admin", "/api", "/konto", "/weiter", "/c/", "/j/", "/poster/", "/invite/"],
       },
     ],
     sitemap: `${base}/sitemap.xml`,

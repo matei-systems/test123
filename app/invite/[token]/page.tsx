@@ -28,7 +28,7 @@ export default async function InvitePage({
   if (!invitation) {
     return (
       <AuthShell eyebrow="Einladung" title="Nicht gefunden">
-        <p className="text-sm text-[#A6A099]">Dieser Einladungslink ist ungültig.</p>
+        <p className="text-sm text-muted">Dieser Einladungslink ist ungültig.</p>
       </AuthShell>
     );
   }
@@ -36,7 +36,7 @@ export default async function InvitePage({
   if (invitation.status === "revoked") {
     return (
       <AuthShell eyebrow="Einladung" title="Zurückgezogen">
-        <p className="text-sm text-[#A6A099]">Diese Einladung wurde vom Betrieb zurückgezogen.</p>
+        <p className="text-sm text-muted">Diese Einladung wurde vom Betrieb zurückgezogen.</p>
       </AuthShell>
     );
   }
@@ -44,7 +44,7 @@ export default async function InvitePage({
   if (invitation.status === "accepted") {
     return (
       <AuthShell eyebrow="Einladung" title="Bereits angenommen">
-        <p className="text-sm text-[#A6A099] mb-4">Diese Einladung wurde bereits angenommen.</p>
+        <p className="text-sm text-muted mb-4">Diese Einladung wurde bereits angenommen.</p>
         <Link href="/login" className="text-gold hover:text-gold-bright text-sm">
           Zum Login
         </Link>
@@ -56,7 +56,7 @@ export default async function InvitePage({
   if (expired || invitation.status === "expired") {
     return (
       <AuthShell eyebrow="Einladung" title="Abgelaufen">
-        <p className="text-sm text-[#A6A099]">
+        <p className="text-sm text-muted">
           Diese Einladung ist abgelaufen. Bitte bitte die einladende Person um eine neue.
         </p>
       </AuthShell>
@@ -66,7 +66,7 @@ export default async function InvitePage({
   if (searchParams?.confirmEmail) {
     return (
       <AuthShell eyebrow="Fast geschafft" title="E-Mail bestätigen">
-        <p className="text-sm text-[#F4F1EC] leading-relaxed">
+        <p className="text-sm text-fg leading-relaxed">
           Wir haben einen Bestätigungslink an{" "}
           <span className="text-gold-bright font-medium">{invitation.email}</span> geschickt. Öffne die E-Mail und
           bestätige dein Konto — danach landest du automatisch wieder hier, um die Einladung anzunehmen.
@@ -88,7 +88,7 @@ export default async function InvitePage({
       <AuthShell eyebrow="Team-Einladung" title={`Zu ${orgName}`} subtitle={`Du wurdest als ${roleLabel} eingeladen.`}>
         <ErrorMessage>{searchParams?.error}</ErrorMessage>
         <div className="text-xs text-faint mb-5">
-          Für: <span className="text-[#F4F1EC]">{invitation.email}</span>
+          Für: <span className="text-fg">{invitation.email}</span>
         </div>
 
         <div className="text-[11px] font-bold tracking-[1.5px] uppercase text-faint mb-3">
@@ -134,7 +134,7 @@ export default async function InvitePage({
   if ((user.email ?? "").toLowerCase() !== invitation.email.toLowerCase()) {
     return (
       <AuthShell eyebrow="Team-Einladung" title="Falsches Konto">
-        <p className="text-sm text-[#F4F1EC] leading-relaxed mb-6">
+        <p className="text-sm text-fg leading-relaxed mb-6">
           Diese Einladung ist für <span className="text-gold-bright">{invitation.email}</span> bestimmt. Du bist
           aktuell als <span className="text-gold-bright">{user.email}</span> angemeldet.
         </p>

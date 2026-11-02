@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { t, type Translations } from "@/lib/marketing/i18n";
+import { useColorScheme } from "@/components/ui/useColorScheme";
 
 type Theme = "dark" | "light";
 
@@ -13,49 +14,29 @@ interface Ctx {
 
 const ThemeContext = createContext<Ctx | null>(null);
 
-const THEME_KEY = "matei-landing-theme";
-
 export function useTheme() {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
   return ctx;
 }
 
-// Bewusst client-seitig und ohne SSR-Persistenz (kein Cookie): reiner
-// Komfort für Besucher auf DIESER Seite, kein Tracking, kein Server-Zustand.
-// Start immer dunkel (Server-Default) - falls im localStorage "light"
-// hinterlegt ist, wird direkt nach dem Mount umgeschaltet.
+// Rahmen der Marketing-Seiten (Für Geschäfte, Dienstleistungen). Das
+// Farbschema ist seit dem Designsystem global (Klasse "dark" auf <html>,
+// siehe components/ui/useColorScheme.ts) - der Umschalter in der Navigation
+// wirkt dadurch auf die ganze App, nicht nur auf diese Seite.
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const { scheme, setScheme } = useColorScheme();
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(THEME_KEY);
-      if (saved === "light" || saved === "dark") setThemeState(saved);
-    } catch {
-      // Privater Modus o.ä. - Standardwert bleibt einfach bestehen.
-    }
-  }, []);
-
-  function setTheme(next: Theme) {
-    setThemeState(next);
-    try {
-      localStorage.setItem(THEME_KEY, next);
-    } catch {}
-  }
-
-  // Sanftes Scrollen zu Sektions-Ankern (#how, #demo, ...) - nur auf dieser
-  // Seite, deshalb hier statt global in app/globals.css gesetzt. Die Regel
-  // selbst schaltet sich bei prefers-reduced-motion:reduce automatisch ab
-  // (siehe landing.css), das <html>-Attribut muss dafür nicht entfernt werden.
+  // Sanftes Scrollen zu Sektions-Ankern (#how, #demo, ...) - nur auf diesen
+  // Seiten. Bei prefers-reduced-motion schaltet landing.css es wieder ab.
   useEffect(() => {
     document.documentElement.classList.add("lp-smooth");
     return () => document.documentElement.classList.remove("lp-smooth");
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, t }}>
-      <div className="lp" data-theme={theme}>
+    <ThemeContext.Provider value={{ theme: scheme, setTheme: setScheme, t }}>
+      <div className="lp">
         <div className="lp-grain" aria-hidden="true" />
         {children}
       </div>

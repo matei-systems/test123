@@ -14,6 +14,15 @@ export function isGoogleWalletConfigured(): boolean {
   );
 }
 
+// Öffentlich anbieten erst, wenn Google den Issuer-Account freigegeben hat
+// (im Demo-Modus können nur eingetragene Testkonten Pässe speichern - alle
+// anderen sähen eine Google-Fehlermeldung). Nach der Freigabe in Vercel
+// GOOGLE_WALLET_PUBLISHED=true setzen. Die API-Route selbst bleibt für Tests
+// mit Testkonten auch vorher nutzbar.
+export function isGoogleWalletPublished(): boolean {
+  return isGoogleWalletConfigured() && process.env.GOOGLE_WALLET_PUBLISHED === "true";
+}
+
 function privateKey(): string {
   return (process.env.GOOGLE_WALLET_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
 }

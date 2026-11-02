@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
+import PublicShell from "@/components/site/PublicShell";
 import ServicesClient from "@/components/marketing/ServicesClient";
 
-export const metadata = { title: "Weitere Dienstleistungen – Matei Systems" };
+export const metadata: Metadata = { title: "Weitere Dienstleistungen" };
 
 export default function DienstleistungenPage() {
-  return <ServicesClient />;
+  return (
+    <PublicShell>
+      <ServicesClient />
+    </PublicShell>
+  );
 }

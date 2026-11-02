@@ -8,6 +8,9 @@ export async function updatePassword(formData: FormData) {
   const password = String(formData.get("password"));
   const passwordConfirm = String(formData.get("passwordConfirm"));
 
+  if (password.length < 8) {
+    redirect("/reset-password?error=" + encodeURIComponent("Bitte wähle ein Passwort mit mindestens 8 Zeichen."));
+  }
   if (password !== passwordConfirm) {
     redirect("/reset-password?error=" + encodeURIComponent("Die Passwörter stimmen nicht überein."));
   }

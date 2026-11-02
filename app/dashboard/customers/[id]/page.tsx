@@ -81,17 +81,17 @@ export default async function CustomerProfile({ params }: { params: { id: string
 
   return (
     <div>
-      <Link href="/dashboard/customers" className="text-sm text-[#A6A099] hover:text-gold-bright transition-colors">
+      <Link href="/dashboard/customers" className="text-sm text-muted hover:text-gold-bright transition-colors">
         ← Kunden
       </Link>
 
       <div className="flex items-center gap-4 mt-3 mb-8 enter">
-        <div className="w-14 h-14 rounded-full bg-[rgba(232,181,115,0.14)] text-gold-bright grid place-items-center font-bold text-lg shrink-0">
+        <div className="w-14 h-14 rounded-full bg-accent-strong/[0.14] text-gold-bright grid place-items-center font-bold text-lg shrink-0">
           {initials}
         </div>
         <div className="min-w-0">
           <h1 className="text-xl font-bold tracking-tight truncate">{customer.full_name ?? "Kunde"}</h1>
-          <div className="text-sm text-[#A6A099] flex flex-wrap gap-x-3">
+          <div className="text-sm text-muted flex flex-wrap gap-x-3">
             {customer.email && <span>{customer.email}</span>}
             {customer.phone && <span>{customer.phone}</span>}
             <span>Kunde seit {new Date(customer.created_at).toLocaleDateString("de-AT")}</span>
@@ -99,9 +99,9 @@ export default async function CustomerProfile({ params }: { params: { id: string
         </div>
       </div>
 
-      <div className="font-semibold text-sm text-[#F4F1EC] mb-3">Treuekarten ({cardsWithQr.length})</div>
+      <div className="font-semibold text-sm text-fg mb-3">Treuekarten ({cardsWithQr.length})</div>
       {cardsWithQr.length === 0 ? (
-        <div className="card p-6 text-sm text-[#6E685F] mb-8">Noch keine Karte für diesen Kunden ausgegeben.</div>
+        <div className="card p-6 text-sm text-faint mb-8">Noch keine Karte für diesen Kunden ausgegeben.</div>
       ) : (
         <div className="grid gap-5 mb-8" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))" }}>
           {cardsWithQr.map((c: any, i: number) => {
@@ -121,8 +121,8 @@ export default async function CustomerProfile({ params }: { params: { id: string
                   qrDataUrl={c.qr}
                 />
                 <div className="flex items-center justify-between mt-2 px-1">
-                  <span className="text-xs text-[#A6A099]">
-                    Status: <span className="text-[#F4F1EC]">{STATUS_LABEL[c.status] ?? c.status}</span>
+                  <span className="text-xs text-muted">
+                    Status: <span className="text-fg">{STATUS_LABEL[c.status] ?? c.status}</span>
                   </span>
                   <span className="text-xs text-faint">Apple/Google Wallet: nicht verbunden</span>
                 </div>
@@ -134,19 +134,19 @@ export default async function CustomerProfile({ params }: { params: { id: string
 
       <div className="grid gap-6 md:grid-cols-2">
         <div>
-          <div className="font-semibold text-sm text-[#F4F1EC] mb-3">Verlauf</div>
+          <div className="font-semibold text-sm text-fg mb-3">Verlauf</div>
           <div className="card p-4">
             {transactions.length === 0 ? (
-              <div className="text-sm text-[#6E685F] py-2">Noch keine Aktivität.</div>
+              <div className="text-sm text-faint py-2">Noch keine Aktivität.</div>
             ) : (
               <div className="space-y-1">
                 {transactions.map((tx: any) => (
-                  <div key={tx.id} className="flex items-center justify-between gap-3 py-2 border-t first:border-t-0 border-white/[0.06]">
-                    <div className="text-sm text-[#F4F1EC] min-w-0 truncate">
+                  <div key={tx.id} className="flex items-center justify-between gap-3 py-2 border-t first:border-t-0 border-line">
+                    <div className="text-sm text-fg min-w-0 truncate">
                       {TX_LABEL[tx.type] ?? tx.type}
-                      <span className="text-[#A6A099]"> · {tx.cards?.loyalty_programs?.title ?? tx.cards?.loyalty_programs?.name}</span>
+                      <span className="text-muted"> · {tx.cards?.loyalty_programs?.title ?? tx.cards?.loyalty_programs?.name}</span>
                     </div>
-                    <div className="text-xs text-[#A6A099] shrink-0">{timeAgo(tx.created_at)}</div>
+                    <div className="text-xs text-muted shrink-0">{timeAgo(tx.created_at)}</div>
                   </div>
                 ))}
               </div>
@@ -155,19 +155,19 @@ export default async function CustomerProfile({ params }: { params: { id: string
         </div>
 
         <div>
-          <div className="font-semibold text-sm text-[#F4F1EC] mb-3">Eingelöste Belohnungen</div>
+          <div className="font-semibold text-sm text-fg mb-3">Eingelöste Belohnungen</div>
           <div className="card p-4">
             {redemptions.length === 0 ? (
-              <div className="text-sm text-[#6E685F] py-2">Noch keine Belohnung eingelöst.</div>
+              <div className="text-sm text-faint py-2">Noch keine Belohnung eingelöst.</div>
             ) : (
               <div className="space-y-1">
                 {redemptions.map((r: any) => (
-                  <div key={r.id} className="flex items-center justify-between gap-3 py-2 border-t first:border-t-0 border-white/[0.06]">
-                    <div className="text-sm text-[#F4F1EC] min-w-0 truncate">
+                  <div key={r.id} className="flex items-center justify-between gap-3 py-2 border-t first:border-t-0 border-line">
+                    <div className="text-sm text-fg min-w-0 truncate">
                       {r.cards?.loyalty_programs?.reward_description ?? "Belohnung"}
-                      <span className="text-[#A6A099]"> · {r.cards?.loyalty_programs?.title ?? r.cards?.loyalty_programs?.name}</span>
+                      <span className="text-muted"> · {r.cards?.loyalty_programs?.title ?? r.cards?.loyalty_programs?.name}</span>
                     </div>
-                    <div className="text-xs text-[#A6A099] shrink-0">{timeAgo(r.redeemed_at)}</div>
+                    <div className="text-xs text-muted shrink-0">{timeAgo(r.redeemed_at)}</div>
                   </div>
                 ))}
               </div>

@@ -12,6 +12,6 @@ export const config = {
   // unnötig einen Supabase-Auth-Refresh gemacht, u. a. bei der P10-
   // Live-Aktualisierung, die /api/cards/[serial]/status wiederholt abfragt.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

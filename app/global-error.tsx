@@ -15,20 +15,20 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 
   return (
     <html lang="de">
-      <body style={{ margin: 0, background: "#0B0A0D", color: "#F4F1EC", fontFamily: "-apple-system,BlinkMacSystemFont,sans-serif" }}>
+      <body style={{ margin: 0, background: "#FAF6EF", color: "#14110F", fontFamily: "-apple-system,BlinkMacSystemFont,sans-serif" }}>
         <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ maxWidth: 420, textAlign: "center" }}>
             <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Etwas ist schiefgelaufen</h1>
-            <p style={{ color: "#A6A099", fontSize: 14, marginBottom: 24 }}>
+            <p style={{ color: "#574E45", fontSize: 14, marginBottom: 24 }}>
               Der Fehler wurde automatisch protokolliert. Bitte lade die Seite neu.
             </p>
             <button
               onClick={reset}
               style={{
-                background: "linear-gradient(135deg,#F6D6A0,#DB9F52)",
-                color: "#241a0c",
+                background: "#9C5A18",
+                color: "#FFFFFF",
                 border: "none",
-                borderRadius: 10,
+                borderRadius: 999,
                 padding: "10px 20px",
                 fontSize: 14,
                 fontWeight: 600,

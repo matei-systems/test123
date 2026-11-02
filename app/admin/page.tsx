@@ -1,6 +1,8 @@
 import { getPlatformStats } from "@/lib/admin/stats";
 import StatTile from "@/components/admin/StatTile";
 import GrowthChart from "@/components/admin/GrowthChart";
+import Link from "next/link";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -10,12 +12,35 @@ function fmtEUR(cents: number): string {
 
 export default async function AdminOverviewPage() {
   const stats = await getPlatformStats();
+  const db = createAdminClient();
+  const [pending, flags, reports, contacts] = await Promise.all([
+    db.from("business_profiles").select("org_id", { count: "exact", head: true }).eq("listing_status", "pending"),
+    db.from("transaction_flags").select("id", { count: "exact", head: true }).eq("status", "open"),
+    db.from("content_reports").select("id", { count: "exact", head: true }).eq("status", "open"),
+    db.from("contact_messages").select("id", { count: "exact", head: true }).eq("status", "new"),
+  ]);
+  const moderation = [
+    { href: "/admin/pruefungen", label: "Profile in Prüfung", value: pending.count ?? 0 },
+    { href: "/admin/markierungen", label: "Offene Verdachtsfälle", value: flags.count ?? 0 },
+    { href: "/admin/meldungen", label: "Offene Meldungen", value: reports.count ?? 0 },
+    { href: "/admin/meldungen", label: "Neue Kontaktanfragen", value: contacts.count ?? 0 },
+  ];
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight mb-1">Übersicht</h1>
+        <h1 className="font-display text-[30px] font-semibold leading-tight mb-1">Übersicht</h1>
         <p className="text-dim text-sm">Plattformweite Kennzahlen über alle Betriebe</p>
+      </div>
+
+      <h2 className="mb-3 text-sm font-semibold text-fg">Zu erledigen</h2>
+      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {moderation.map((m) => (
+          <Link key={m.label} href={m.href} className={`card card-hover p-5 ${m.value > 0 ? "border-accent-strong/40" : ""}`}>
+            <div className={`font-display text-3xl font-semibold tabular ${m.value > 0 ? "text-accent" : ""}`}>{m.value}</div>
+            <div className="mt-1 text-xs text-muted">{m.label}</div>
+          </Link>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
@@ -61,7 +86,7 @@ export default async function AdminOverviewPage() {
                     <span className="font-medium">{p.name}</span>
                     <span className="text-dim">{total} · {fmtEUR(p.mrrCents)}</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="h-1.5 rounded-full bg-fg/[0.06] overflow-hidden">
                     <div className="h-full bg-gold-grad" style={{ width: `${share}%` }} />
                   </div>
                   <div className="text-[11px] text-faint mt-1">

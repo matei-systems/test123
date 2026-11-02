@@ -42,7 +42,7 @@ export default function PlanPicker({
             type="button"
             onClick={() => setInterval(i)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              interval === i ? "bg-white/[0.08] text-[#F4F1EC]" : "text-faint hover:text-[#F4F1EC]"
+              interval === i ? "bg-fg/[0.07] text-fg" : "text-faint hover:text-fg"
             }`}
           >
             {i === "monthly" ? "Monatlich" : "Jährlich (2 Monate gratis)"}
@@ -51,7 +51,7 @@ export default function PlanPicker({
       </div>
 
       {error && (
-        <div className="mb-5 text-sm rounded-lg px-3 py-2.5 max-w-md mx-auto" style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+        <div className="mb-5 text-sm rounded-lg px-3 py-2.5 max-w-md mx-auto" style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))" }}>
           {error}
         </div>
       )}

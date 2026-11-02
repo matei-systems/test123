@@ -11,7 +11,7 @@ export default async function ScanPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight mb-1">Scannen</h1>
-      <p className="text-[#A6A099] text-sm mb-6">Kunden-QR-Code scannen, um Stempel zu vergeben oder Belohnungen einzulösen.</p>
+      <p className="text-muted text-sm mb-6">Kunden-QR-Code scannen, um Stempel zu vergeben oder Belohnungen einzulösen.</p>
       <Scanner />
     </div>
   );

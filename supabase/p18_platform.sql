@@ -116,7 +116,12 @@ declare
 begin
   candidate := coalesce(base, 'geschaeft');
   if exists (select 1 from business_profiles where slug = candidate) then
-    candidate := candidate || '-' || substr(md5(new.id::text), 1, 5);
+    candidate := coalesce(base, 'geschaeft') || '-' || substr(md5(new.id::text), 1, 5);
+  end if;
+  -- Extrem unwahrscheinlich, aber möglich: auch der Slug mit Kurz-Suffix ist
+  -- vergeben. Dann die volle ID anhängen - garantiert eindeutig.
+  if exists (select 1 from business_profiles where slug = candidate) then
+    candidate := coalesce(base, 'geschaeft') || '-' || replace(new.id::text, '-', '');
   end if;
   insert into business_profiles (org_id, slug, display_name)
   values (new.id, candidate, new.name)
@@ -133,7 +138,7 @@ create trigger trg_org_profile_created
 insert into business_profiles (org_id, slug, display_name)
 select o.id,
        case when exists (select 1 from business_profiles b where b.slug = coalesce(nullif(slugify(o.name), ''), 'geschaeft'))
-              or exists (select 1 from organizations o2 where o2.id <> o.id and o2.created_at < o.created_at
+              or exists (select 1 from organizations o2 where o2.id <> o.id and (o2.created_at, o2.id) < (o.created_at, o.id)
                          and coalesce(nullif(slugify(o2.name), ''), 'geschaeft') = coalesce(nullif(slugify(o.name), ''), 'geschaeft'))
             then coalesce(nullif(slugify(o.name), ''), 'geschaeft') || '-' || substr(md5(o.id::text), 1, 5)
             else coalesce(nullif(slugify(o.name), ''), 'geschaeft') end,
@@ -430,6 +435,10 @@ alter table redemption_requests enable row level security;
 revoke insert, update, delete on redemption_requests from authenticated, anon;
 drop policy if exists rr_owner_select on redemption_requests;
 create policy rr_owner_select on redemption_requests for select using (user_id = (select auth.uid()));
+-- Teammitglieder sehen offene Codes ihres eigenen Betriebs, damit die Kasse
+-- vor dem Einlösen anzeigen kann, WAS eingelöst wird (Vorschau im Scanner).
+drop policy if exists rr_member_select on redemption_requests;
+create policy rr_member_select on redemption_requests for select using (is_org_member(org_id));
 
 alter table reward_redemptions add column if not exists request_id uuid references redemption_requests(id) on delete set null;
 
@@ -856,3 +865,47 @@ create index if not exists idx_contact_status on contact_messages(status, create
 
 alter table content_reports  enable row level security;
 alter table contact_messages enable row level security;
+
+-- ---------------------------------------------------------------------------
+-- 11) Schutz von Abrechnungs- und Rollenfeldern
+--     a) Beim Anlegen eines Betriebs über die API (Rolle authenticated) setzt
+--        die Datenbank Testphase und Abo-Felder selbst - vorher konnte man per
+--        REST einen Betrieb mit subscription_status='active' oder einer
+--        Testphase bis 2099 anlegen und so die Abrechnung umgehen. Das
+--        Onboarding sendet ohnehin "jetzt + 14 Tage" - identisches Ergebnis.
+--     b) Mitgliedschaften sind über die API nicht mehr direkt schreibbar
+--        (vorher konnte sich ein Admin per REST selbst zum Inhaber machen
+--        oder beliebige Nutzer mit beliebiger Rolle eintragen).
+-- ---------------------------------------------------------------------------
+create or replace function guard_org_insert()
+returns trigger language plpgsql as $$
+begin
+  if current_user in ('authenticated', 'anon') then
+    new.trial_ends_at := now() + interval '14 days';
+    new.plan := 'trial';
+    new.subscription_status := null;
+    new.stripe_customer_id := null;
+    new.stripe_subscription_id := null;
+    new.stripe_price_id := null;
+    new.plan_id := null;
+    new.billing_interval := null;
+    new.current_period_end := null;
+    new.cancel_at_period_end := false;
+    new.admin_suspended := false;
+    new.admin_suspended_reason := null;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists trg_org_guard_insert on organizations;
+create trigger trg_org_guard_insert
+  before insert on organizations
+  for each row execute function guard_org_insert();
+
+-- b) memberships: Die App schreibt Mitgliedschaften ausschließlich serverseitig
+--    (Team-Verwaltung und Einladungs-Annahme mit service_role und eigenen
+--    Rollenregeln, Inhaber-Eintrag per SECURITY-DEFINER-Trigger). Der
+--    eingeloggte Client braucht daher keinerlei Schreibrecht - entzogen.
+drop trigger if exists trg_membership_guard on memberships;
+drop function if exists guard_membership_write();
+revoke insert, update, delete on memberships from authenticated, anon;

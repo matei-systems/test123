@@ -24,7 +24,7 @@ export default async function ProgramsPage() {
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight mb-1">Programme</h1>
-          <p className="text-[#A6A099] text-sm">Deine digitalen Treuekarten</p>
+          <p className="text-muted text-sm">Deine digitalen Treuekarten</p>
         </div>
         {canManage && (
           <Link href="/dashboard/programs/new" className="btn btn-primary text-sm shrink-0">
@@ -53,17 +53,17 @@ export default async function ProgramsPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="font-semibold text-sm truncate">{p.title}</div>
-                  <div className="text-xs text-[#A6A099] truncate">
+                  <div className="text-xs text-muted truncate">
                     {p.name} · {p.type === "stamp" ? "Stempelkarte" : "Punktekarte"}
                   </div>
                 </div>
               </div>
-              <div className="text-xs text-[#A6A099] mt-3">Belohnung: {p.reward_description}</div>
+              <div className="text-xs text-muted mt-3">Belohnung: {p.reward_description}</div>
             </Link>
             {canManage && (
               <Link
                 href={`/dashboard/programs/${p.id}/edit`}
-                className="absolute top-3 right-3 w-7 h-7 rounded-lg grid place-items-center text-faint hover:text-gold-bright hover:bg-white/[0.06] transition-colors"
+                className="absolute top-3 right-3 w-7 h-7 rounded-lg grid place-items-center text-faint hover:text-gold-bright hover:bg-fg/[0.06] transition-colors"
                 aria-label="Programm bearbeiten"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -76,7 +76,7 @@ export default async function ProgramsPage() {
           );
         })}
         {(!programs || programs.length === 0) && (
-          <div className="text-[#6E685F] text-sm">Noch keine Programme. Leg dein erstes an.</div>
+          <div className="text-faint text-sm">Noch keine Programme. Leg dein erstes an.</div>
         )}
       </div>
     </div>

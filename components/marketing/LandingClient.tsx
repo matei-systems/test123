@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Fragment } from "react";
-import ScrollNav from "@/components/marketing/ScrollNav";
 import Reveal from "@/components/marketing/Reveal";
 import LiveDemo from "@/components/marketing/LiveDemo";
 import PhoneMockup from "@/components/marketing/PhoneMockup";
@@ -70,11 +69,10 @@ function Content({ heroQr }: { heroQr: string }) {
   const year = new Date().getFullYear();
 
   return (
-    <main className="overflow-x-hidden">
-      <ScrollNav />
+    <div className="overflow-x-hidden">
 
       {/* HERO */}
-      <header className="relative pt-[150px] pb-[90px] overflow-hidden">
+      <section className="relative pt-12 md:pt-20 pb-[90px] overflow-hidden">
         <div
           className="pointer-events-none absolute -top-[10%] left-1/2 -translate-x-1/2 w-[900px] h-[700px] rounded-full lp-aurora-a"
           style={{ background: "radial-gradient(closest-side, var(--lp-gold-bg), transparent 70%)" }}
@@ -100,7 +98,7 @@ function Content({ heroQr }: { heroQr: string }) {
             <Reveal variant="up" delayMs={240}>
               <div className="flex gap-3.5 flex-wrap">
                 <Magnetic>
-                  <Link href="/register" className="btn btn-primary">
+                  <Link href="/register?typ=geschaeft" className="btn btn-primary">
                     {t.hero.ctaPrimary}
                   </Link>
                 </Magnetic>
@@ -113,7 +111,7 @@ function Content({ heroQr }: { heroQr: string }) {
             </Reveal>
             <Reveal variant="up" delayMs={300}>
               <div className="mt-5 text-[13px] text-faint flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#4ade80] shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-forest shadow-[0_0_8px_#4ade80] shrink-0" />
                 {t.hero.note}
               </div>
             </Reveal>
@@ -123,7 +121,7 @@ function Content({ heroQr }: { heroQr: string }) {
             <PhoneMockup heroQr={heroQr} />
           </Reveal>
         </div>
-      </header>
+      </section>
 
       {/* TRUST */}
       <div className="py-6 border-t border-b border-line overflow-hidden">
@@ -277,7 +275,7 @@ function Content({ heroQr }: { heroQr: string }) {
                     }}
                   >
                     {featured && (
-                      <div className="absolute -top-3 right-6 bg-gold-grad text-[#241a0c] text-[11px] font-extrabold tracking-wide px-3 py-1.5 rounded-full">
+                      <div className="absolute -top-3 right-6 bg-gold-grad text-on-accent text-[11px] font-extrabold tracking-wide px-3 py-1.5 rounded-full">
                         {t.pricing.popular}
                       </div>
                     )}
@@ -294,7 +292,7 @@ function Content({ heroQr }: { heroQr: string }) {
                         </li>
                       ))}
                     </ul>
-                    <Link href="/register" className={`btn ${featured ? "btn-primary" : "btn-ghost"} w-full`}>
+                    <Link href="/register?typ=geschaeft" className={`btn ${featured ? "btn-primary" : "btn-ghost"} w-full`}>
                       {t.pricing.cta}
                     </Link>
                   </SpotlightCard>
@@ -327,7 +325,7 @@ function Content({ heroQr }: { heroQr: string }) {
               <p className="text-dim text-lg max-w-[520px] mx-auto mb-7">{t.cta.sub}</p>
               <div className="flex gap-3.5 justify-center flex-wrap">
                 <Magnetic>
-                  <Link href="/register" className="btn btn-primary">
+                  <Link href="/register?typ=geschaeft" className="btn btn-primary">
                     {t.cta.primary}
                   </Link>
                 </Magnetic>
@@ -342,39 +340,7 @@ function Content({ heroQr }: { heroQr: string }) {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="border-t border-line py-11">
-        <div className="max-w-[1160px] mx-auto px-6 flex flex-wrap items-center justify-between gap-5 text-faint text-sm">
-          <div className="flex items-center gap-2.5 font-bold text-[color:var(--lp-text)]">
-            <div className="w-8 h-8 rounded-[9px] grid place-items-center font-extrabold text-[#241a0c] bg-gold-grad">M</div>
-            {COMPANY.tradingName}
-          </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            <span>
-              {COMPANY.city} · {COMPANY.country} ·{" "}
-              <a href={mailto} className="hover:text-gold-bright">
-                {COMPANY.email}
-              </a>
-            </span>
-            <Link href="/impressum" className="hover:text-gold-bright">
-              {t.footer.impressum}
-            </Link>
-            <Link href="/datenschutz" className="hover:text-gold-bright">
-              {t.footer.datenschutz}
-            </Link>
-            <Link href="/agb" className="hover:text-gold-bright">
-              {t.footer.agb}
-            </Link>
-            <Link href="/dienstleistungen" className="hover:text-dim">
-              {t.nav.services}
-            </Link>
-          </div>
-          <div>
-            © {year} {COMPANY.tradingName}
-          </div>
-        </div>
-      </footer>
-    </main>
+    </div>
   );
 }
 

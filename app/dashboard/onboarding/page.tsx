@@ -12,12 +12,12 @@ export default function OnboardingPage({
   return (
     <div className="max-w-md enter">
       <h1 className="text-2xl font-bold tracking-tight mb-1">Betrieb anlegen</h1>
-      <p className="text-[#A6A099] text-sm mb-6">
+      <p className="text-muted text-sm mb-6">
         Wie heißt dein Unternehmen? Das erscheint auf den Treuekarten deiner Kunden.
       </p>
       {searchParams?.error && (
         <div className="mb-4 text-sm rounded-lg px-3 py-2"
-             style={{ background: "rgba(239,68,68,0.12)", color: "#FCA5A5" }}>
+             style={{ background: "rgb(var(--danger) / 0.1)", color: "rgb(var(--danger))" }}>
           {searchParams.error}
         </div>
       )}

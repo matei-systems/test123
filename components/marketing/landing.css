@@ -6,40 +6,31 @@
    verwendet .card/.btn-ghost/etc. außerhalb von .lp und bleibt dadurch
    komplett unberührt. */
 .lp {
-  --lp-bg: #0b0a0d;
-  --lp-bg-2: #100e12;
-  --lp-surface: #16131a;
-  --lp-text: #f4f1ec;
-  --lp-dim: #a6a099;
-  --lp-faint: #6e685f;
-  --lp-gold: #e8b573;
-  --lp-gold-bright: #f6d19a;
-  --lp-line: rgba(255, 255, 255, 0.08);
-  --lp-line-2: rgba(255, 255, 255, 0.14);
-  --lp-rose: #fb7185;
-  --lp-rose-bg: rgba(251, 113, 133, 0.12);
-  --lp-gold-bg: rgba(232, 181, 115, 0.12);
+  /* Seit dem Designsystem (app/globals.css) nur noch Verweise auf die
+     globalen Rollen - Hell/Dunkel steuert die Klasse "dark" auf <html>. */
+  --lp-bg: rgb(var(--paper));
+  --lp-bg-2: rgb(var(--paper-2));
+  --lp-surface: rgb(var(--surface));
+  --lp-text: rgb(var(--fg));
+  --lp-dim: rgb(var(--muted));
+  --lp-faint: rgb(var(--faint));
+  --lp-gold: rgb(var(--accent));
+  --lp-gold-bright: rgb(var(--accent-hover));
+  --lp-line: rgb(var(--line) / 0.12);
+  --lp-line-2: rgb(var(--line) / 0.2);
+  --lp-rose: rgb(var(--danger));
+  --lp-rose-bg: rgb(var(--danger) / 0.08);
+  --lp-gold-bg: rgb(var(--accent-strong) / 0.12);
 
   background: var(--lp-bg);
   color: var(--lp-text);
 }
 
-.lp[data-theme="light"] {
-  --lp-bg: #fbf8f4;
-  --lp-bg-2: #f4efe7;
-  --lp-surface: #ffffff;
-  --lp-text: #211d18;
-  --lp-dim: #6b6459;
-  --lp-faint: #948c80;
-  --lp-gold: #b5793a;
-  --lp-gold-bright: #8f5f28;
-  --lp-line: rgba(33, 29, 24, 0.1);
-  --lp-line-2: rgba(33, 29, 24, 0.16);
-  --lp-rose: #e11d48;
-  --lp-rose-bg: rgba(225, 29, 72, 0.08);
-  --lp-gold-bg: rgba(181, 121, 58, 0.1);
+.lp h1, .lp h2, .lp h3 {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  letter-spacing: -0.015em;
+  font-weight: 600;
 }
-
 .lp .text-dim { color: var(--lp-dim); }
 .lp .text-faint { color: var(--lp-faint); }
 .lp .text-gold { color: var(--lp-gold); }
@@ -183,8 +174,8 @@
   inset: 0;
   z-index: 40;
   pointer-events: none;
-  opacity: 0.035;
-  mix-blend-mode: overlay;
+  opacity: 0.025;
+  mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 
@@ -195,8 +186,7 @@
    Randfarbe/Position ändert) - nur innerhalb der Marketing-Seite, damit
    Dashboard/Admin (die dieselbe .card-hover-Klasse nutzen) unverändert
    bleiben. */
-.lp .card-hover:hover { box-shadow: 0 22px 50px -26px rgba(0, 0, 0, 0.55); }
-.lp[data-theme="light"] .card-hover:hover { box-shadow: 0 22px 50px -30px rgba(33, 29, 24, 0.22); }
+.lp .card-hover:hover { box-shadow: 0 22px 50px -30px rgb(var(--shadow) / 0.3); }
 
 /* Logo im Nav: leichtes Aufleuchten beim Hover */
 .lp .lp-logo-mark { transition: transform 0.25s ease, box-shadow 0.25s ease; }
