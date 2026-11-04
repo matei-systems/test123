@@ -4,11 +4,11 @@
 
 - **Code fertig, gebaut und getestet:** Typprüfung ohne Fehler, Produktions-Build erfolgreich, 153 Datenbank-Tests und
   3 Parallelitätstests bestanden, öffentliche Seiten im Browser auf Desktop, Handy und im Dunkelmodus geprüft.
-- **Noch nicht live:** Die Datenbank-Migration P18 braucht deine Bestätigung im Supabase-Dialog (zweimal ohne Antwort
-  abgelaufen). Bis sie eingespielt ist, überspringt Vercel den Build (`scripts/vercel-ignore-build.mjs`), und die
-  bisherige Version bleibt unverändert online.
-- **Danach:** Migration + Lockdown + Admin-Eintrag einspielen → Deploy → Ende-zu-Ende-Tests der eingeloggten Abläufe
-  in Produktion mit Testkonten → Testdaten entfernen.
+- **Datenbank aktualisiert (04.11.2026):** Migration P18 samt Schreibsperre und Admin-Eintrag wurde von dir im
+  Supabase SQL Editor eingespielt (der automatische Weg über die Supabase-Anbindung blieb sechsmal unbestätigt) und
+  danach von mir an der Live-Datenbank geprüft. Der Build-Schutz (`scripts/vercel-ignore-build.mjs`) lässt den Build
+  deshalb jetzt durch.
+- **Offen:** Ende-zu-Ende-Tests der eingeloggten Abläufe in Produktion mit Testkonten, danach Testdaten entfernen.
 
 ## Wichtigste Änderungen
 
@@ -110,6 +110,8 @@ Programm-Editor, Live-Aktualisierung der Kundenkarte.
 | Gegenprobe der Test-Helfer mit absichtlich falschen Erwartungen | schlagen wie erwartet fehl |
 | Browser (Playwright): 11 öffentliche Seiten, je Desktop 1440 px und Handy 390 px, dazu 3 Seiten dunkel | alle HTTP 200, keine JS-Fehler, kein horizontales Überlaufen, Sichtprüfung der Screenshots |
 | Build-Schutz gegen die Live-Datenbank | überspringt den Build korrekt, solange P18 fehlt |
+| Live-Datenbank nach dem Einspielen von P18 | 2 Geschäftsprofile mit eindeutigen Adressen, 3 Hauptbelohnungen, 1 Admin-Eintrag, RLS auf allen neuen Tabellen, keine direkten Schreibrechte auf Karten-Salden, Buchungen, Einlösungen und Mitgliedschaften, Buchungsfunktionen nur für eingeloggte Nutzer |
+| Supabase-Sicherheitsprüfung (Advisor) nach P18 | keine Lücken; Hinweise: Admin-Tabellen ohne Policy (gewollt, nur Server-Zugriff), Trigger-Funktionen mit veränderlichem Suchpfad bzw. über die API sichtbar (nicht aufrufbar, siehe Empfehlungen), Leaked-Password-Schutz in Supabase Auth aus |
 | Ende-zu-Ende eingeloggte Abläufe in Produktion | **ausstehend**, braucht die Migration |
 
 ## Lokal starten und veröffentlichen
@@ -124,7 +126,7 @@ Siehe `README.md`. Kurzfassung:
 
 ## Empfehlungen an dich
 
-1. Migration freigeben (siehe Nachricht im Chat).
+1. In Supabase Auth „Leaked password protection“ aktivieren, sobald der Plan es erlaubt (Hinweis des Supabase-Advisors).
 2. Supabase-Plan: Der kostenlose Plan pausiert das Projekt nach etwa einer Woche Inaktivität. Das war die Ursache des
    Ausfalls. Für den Echtbetrieb lohnt ein bezahlter Plan.
 3. Nach dem Admin-Eintrag unter `/admin/organizations` die Testphasen deiner Test-Betriebe verlängern.
