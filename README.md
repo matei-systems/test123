@@ -34,7 +34,9 @@ Datenbank (Supabase -> SQL Editor), **in dieser Reihenfolge**:
 2. `supabase/p18_platform.sql` – Plattform: Kundenkonten, Geschäftsprofile + Prüfstatus, Rewards, Aktionen, atomare
    Buchungsfunktionen, Einlöse-Codes, Verdachtsmarkierung, Meldungen/Kontakt, Schutz von Abo- und Rollenfeldern
 3. `supabase/p18_lockdown.sql` – entzieht direkte Schreibrechte auf Salden/Buchungen (nur mit dieser App-Version)
-4. Plattform-Admin eintragen:
+4. `supabase/p18_hardening.sql` – Härtung nach dem Supabase-Sicherheits-Advisor (fester Suchpfad für Funktionen,
+   Trigger-Funktionen nicht über die API aufrufbar)
+5. Plattform-Admin eintragen:
    ```sql
    insert into platform_admins (user_id, role)
    select id, 'superadmin' from auth.users where lower(email) = 'deine@adresse.at'

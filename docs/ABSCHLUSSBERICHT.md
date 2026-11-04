@@ -119,7 +119,7 @@ Programm-Editor, Live-Aktualisierung der Kundenkarte.
 Siehe `README.md`. Kurzfassung:
 1. `npm ci`
 2. `.env.local` nach `.env.example` anlegen.
-3. In Supabase `schema.sql` → `p18_platform.sql` → `p18_lockdown.sql` ausführen und den Admin eintragen.
+3. In Supabase `schema.sql` → `p18_platform.sql` → `p18_lockdown.sql` → `p18_hardening.sql` ausführen und den Admin eintragen.
 4. `npm run dev`
 
 **Veröffentlichen:** Push auf den Produktions-Branch. Vercel baut automatisch, sobald die Migration in der Datenbank ist.

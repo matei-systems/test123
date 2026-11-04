@@ -15,6 +15,7 @@ q -f $D/00_supabase_stub.sql
 q -f $R/schema.sql
 q -f $R/p18_platform.sql
 q -f $R/p18_lockdown.sql
+q -f $R/p18_hardening.sql
 q -f $D/10_helpers.sql
 q -f $D/20_seed.sql
 # Backfill-Test: Profile löschen und Migration erneut laufen lassen
