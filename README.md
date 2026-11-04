@@ -55,6 +55,8 @@ npm run build      # Produktions-Build (prüft auch Typen)
   Schema + P18 ein und führt 153 Tests unter den echten Rollen aus (RLS-Isolation, gesperrte Direktzugriffe,
   Vergabe/Einlösung, Idempotenz, Einmal-Codes, Kartenübernahme, Verdachtsmarkierung, Löschschutz).
   `supabase/tests/concurrency.sh` prüft echte Parallelität (zwei Kassen gleichzeitig).
+- **Browser + API gegen eine laufende App:** `tests/e2e/` (Geschäft, Kundin, Kasse, Admin, Angriffsproben; legt echte
+  Testkonten an, Anleitung und Aufräumen in `tests/e2e/README.md`).
 - **Typen & Build:** `npx tsc --noEmit`, `npm run build`.
 
 ## Deployen (Vercel)

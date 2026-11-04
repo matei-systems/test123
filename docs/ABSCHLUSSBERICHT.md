@@ -1,14 +1,17 @@
-# Abschlussbericht – Matei Systems Plattform (Stand 02.11.2026)
+# Abschlussbericht – Matei Systems Plattform (Stand 04.11.2026)
 
 ## Status auf einen Blick
 
-- **Code fertig, gebaut und getestet:** Typprüfung ohne Fehler, Produktions-Build erfolgreich, 153 Datenbank-Tests und
-  3 Parallelitätstests bestanden, öffentliche Seiten im Browser auf Desktop, Handy und im Dunkelmodus geprüft.
+- **Live auf matei.systems** (Deployment `4f08f4f`, Status READY). Typprüfung ohne Fehler, Produktions-Build erfolgreich,
+  153 Datenbank-Tests und 3 Parallelitätstests bestanden, öffentliche Seiten auf Desktop, Handy und im Dunkelmodus geprüft.
 - **Datenbank aktualisiert (04.11.2026):** Migration P18 samt Schreibsperre und Admin-Eintrag wurde von dir im
   Supabase SQL Editor eingespielt (der automatische Weg über die Supabase-Anbindung blieb sechsmal unbestätigt) und
-  danach von mir an der Live-Datenbank geprüft. Der Build-Schutz (`scripts/vercel-ignore-build.mjs`) lässt den Build
-  deshalb jetzt durch.
-- **Offen:** Ende-zu-Ende-Tests der eingeloggten Abläufe in Produktion mit Testkonten, danach Testdaten entfernen.
+  danach von mir an der Live-Datenbank geprüft. Der Build-Schutz (`scripts/vercel-ignore-build.mjs`) hat daraufhin den
+  Build durchgelassen.
+- **Ende-zu-Ende-Tests in Produktion bestanden** (Geschäft, Kundin, Kasse, Admin, Sicherheitsproben, siehe Tabelle unten).
+  Alle Testdaten sind wieder entfernt, deine bisherigen Daten sind unverändert.
+- **Offen (klein):** `supabase/p18_hardening.sql` einmal im SQL Editor ausführen (Hinweise des Supabase-Sicherheits-Advisors,
+  kein akutes Risiko). Außerdem prüfen: die Google-Wallet-Aussteller-ID (siehe „Was fehlt“).
 
 ## Wichtigste Änderungen
 
@@ -65,15 +68,23 @@ Grenzen beim Arbeiten mit Canva:
 
 ## Was funktioniert
 
-**Im Browser geprüft (gegen die Live-Datenbank):** öffentliche Seiten, Registrierung und Login (Formulare),
-Rechtsseiten, Dunkelmodus, Handy-Darstellung.
+**In Produktion mit Testkonten durchgespielt (Browser und API):**
+- Geschäft: Registrierung, Betrieb anlegen (Testphase 14 Tage serverseitig gesetzt), Programm per Assistent, zweite Belohnung,
+  Profil ausfüllen und einreichen, Aufsteller, alle Geschäftsseiten.
+- Kundin: Registrierung mit Rückkehr zur Beitrittsseite, Karte ins Wallet, Kartendetail mit gesperrten/frei werdenden
+  Belohnungen, Verlauf, Profil, Rollenschutz (kein Zugang zu Admin und Geschäftsbereich).
+- Kasse: Stempel buchen, Doppelscan innerhalb von 30 s abgelehnt, Einlöse-Code der Kundin (6 Zeichen, Countdown),
+  Einlösung per Kurzcode im Scanner, Kundin sieht Abschluss und Verlauf, derselbe Code lässt sich nicht erneut einlösen.
+- Admin: Prüf-Warteschlange, Ablehnen nur mit Begründung, Freischalten, Verzeichnis und öffentliches Profil erscheinen,
+  Suche und Filter, Meldung und Kontaktanfrage kommen an, Pausieren blendet sofort aus, Pause aufheben, Audit-Protokoll.
 
-**Auf Datenbankebene vollständig getestet** (153 Tests, siehe unten): Vergabe nach Regel, Betrag und Aktion,
+**Auf Datenbankebene zusätzlich vollständig getestet** (153 Tests, siehe unten): Vergabe nach Regel, Betrag und Aktion,
 Einlösen an der Kasse, Einlöse-Codes, Kartenübernahme, Sichtbarkeit je Rolle, Prüfstatus-Regeln, Löschschutz,
 Verdachtsmarkierung, Schutz von Abo- und Rollenfeldern.
 
-**Implementiert und gebaut, aber erst nach dem Einspielen der Migration im Browser prüfbar:** alle eingeloggten
-Abläufe in Kundenkonto, Geschäftsbereich und Adminbereich, die die neuen Tabellen und Funktionen nutzen.
+**Nicht in Produktion durchgespielt:** Zahlungen/Stripe, Team-Einladungen per E-Mail, Konto löschen, Datenexport, Kamera-Scan
+(im Test ohne Kamera, stattdessen Kurzcode), die Verdachtsmarkierung im Adminbereich (löst erst bei 8 Buchungen pro 24 h aus,
+auf Datenbankebene getestet), dein eigener Admin-Login.
 
 Unverändert weiter in Betrieb: Abrechnung über Stripe, Team und Einladungen, Standorte, Support-Tickets,
 Programm-Editor, Live-Aktualisierung der Kundenkarte.
@@ -83,7 +94,10 @@ Programm-Editor, Live-Aktualisierung der Kundenkarte.
 - **Apple Wallet:** Code vorhanden, es fehlen Apple-Developer-Konto und Zertifikate. Der Button zeigt „In Vorbereitung“.
 - **Google Wallet:** Technisch eingebunden, der Issuer ist aber noch im Demo-Modus. Der Button ist für Kunden
   ausgeblendet, bis du nach der Google-Freigabe `GOOGLE_WALLET_PUBLISHED=true` setzt. Zum Testen mit Testkonten:
-  `/api/wallet/google?serial=…`.
+  `/api/wallet/google?serial=…`. **Auffund aus den Vercel-Protokollen:** Google lehnt die hinterlegte Aussteller-ID seit
+  August mit „not a valid id“ ab (`BCR2DN7TTCKKDAQX…`). Das sieht nach einer Händler-ID (Google Pay) statt der
+  numerischen Issuer-ID der Google-Wallet-API aus. Die Fehler werden nur protokolliert und stören Stempeln und Einlösen nicht.
+  Bitte in der Google Pay & Wallet Console die Issuer-ID prüfen und `GOOGLE_WALLET_ISSUER_ID` in Vercel anpassen.
 - **E-Mail-Versand** (Resend nicht eingerichtet): keine automatischen Mails bei Prüfentscheidungen. Kontaktanfragen
   beantwortest du per E-Mail aus dem Adminbereich.
 - **E-Mail-Bestätigung** ist in Supabase Auth deaktiviert. Ich empfehle, sie zu aktivieren. Der Bestätigungs-Ablauf
@@ -112,7 +126,17 @@ Programm-Editor, Live-Aktualisierung der Kundenkarte.
 | Build-Schutz gegen die Live-Datenbank | überspringt den Build korrekt, solange P18 fehlt |
 | Live-Datenbank nach dem Einspielen von P18 | 2 Geschäftsprofile mit eindeutigen Adressen, 3 Hauptbelohnungen, 1 Admin-Eintrag, RLS auf allen neuen Tabellen, keine direkten Schreibrechte auf Karten-Salden, Buchungen, Einlösungen und Mitgliedschaften, Buchungsfunktionen nur für eingeloggte Nutzer |
 | Supabase-Sicherheitsprüfung (Advisor) nach P18 | keine Lücken; Hinweise: Admin-Tabellen ohne Policy (gewollt, nur Server-Zugriff), Trigger-Funktionen mit veränderlichem Suchpfad bzw. über die API sichtbar (nicht aufrufbar, siehe Empfehlungen), Leaked-Password-Schutz in Supabase Auth aus |
-| Ende-zu-Ende eingeloggte Abläufe in Produktion | **ausstehend**, braucht die Migration |
+| E2E Stufe 1/1b: Geschäft, Betrieb, Programm, Belohnung, Profil, Aufsteller (`tests/e2e`) | bestanden (Stufe 1b 13/13) |
+| E2E Stufe 2: Kundin, Beitritt, Wallet, Rollenschutz | bestanden (13/14, siehe Hinweis) |
+| E2E Stufe 3: Stempeln, Doppelscan-Schutz, Einlöse-Code, Einlösung, Einmal-Code | bestanden (14/15, siehe Hinweis) |
+| E2E Stufe 4: 40 Angriffsproben über die Datenbank-API (Kundin, Inhaber, anonym, Abo-Fälschung) | **alle abgewehrt**: Direktzugriffe auf Salden, Buchungen, Einlösungen, Mitgliedschaften, Abo und Admin-Liste gesperrt; Funktionen verlangen Rolle; benutzter Code nicht erneut einlösbar |
+| E2E Stufe 5: Adminbereich, Verzeichnis, Meldung, Kontakt | bestanden (24/24) |
+| Aufräumen | alle Testdaten entfernt (3 Konten, 2 Betriebe, Meldung, Kontaktnachricht, 4 Audit-Einträge der Test-Admin-Rolle); Gegenprobe: ursprüngliche Daten unverändert, nur dein Admin-Eintrag vorhanden |
+
+Hinweis zu den Fehlschlägen im ersten Lauf: Drei Prüfungen schlugen zunächst wegen des Testskripts fehl (zu früh geprüft,
+bevor die Weiterleitung nach dem Speichern ankam; abweichender Wortlaut einer Fehlermeldung). Das Verhalten der App war
+jeweils korrekt und wurde durch Folgeschritte oder Wiederholung bestätigt; die Skripte sind korrigiert. Zwei weitere
+Fehlschläge lagen an der Testmethode (eingeklapptes Formular, `.select()` bei der Betriebsanlage, das die App selbst nicht nutzt).
 
 ## Lokal starten und veröffentlichen
 
@@ -122,11 +146,12 @@ Siehe `README.md`. Kurzfassung:
 3. In Supabase `schema.sql` → `p18_platform.sql` → `p18_lockdown.sql` → `p18_hardening.sql` ausführen und den Admin eintragen.
 4. `npm run dev`
 
-**Veröffentlichen:** Push auf den Produktions-Branch. Vercel baut automatisch, sobald die Migration in der Datenbank ist.
+**Veröffentlichen:** Push auf den Produktions-Branch. Vercel baut automatisch; der Build-Schutz überspringt den Build nur, solange die Migration P18 in der Datenbank fehlt.
 
 ## Empfehlungen an dich
 
-1. In Supabase Auth „Leaked password protection“ aktivieren, sobald der Plan es erlaubt (Hinweis des Supabase-Advisors).
+1. `supabase/p18_hardening.sql` im SQL Editor ausführen (getestet, wiederholbar) und „Leaked password protection“ in
+   Supabase Auth aktivieren, sobald der Plan es erlaubt (Hinweise des Supabase-Advisors).
 2. Supabase-Plan: Der kostenlose Plan pausiert das Projekt nach etwa einer Woche Inaktivität. Das war die Ursache des
    Ausfalls. Für den Echtbetrieb lohnt ein bezahlter Plan.
 3. Nach dem Admin-Eintrag unter `/admin/organizations` die Testphasen deiner Test-Betriebe verlängern.

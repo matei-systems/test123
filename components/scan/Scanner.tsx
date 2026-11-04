@@ -65,6 +65,7 @@ export default function Scanner() {
     setFlash(null);
     setAmount("");
     setConfirmReward(null);
+    setManual("");
     requestId.current = newRequestId();
     resume();
   }
